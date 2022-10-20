@@ -1,0 +1,36 @@
+{
+	"name": "babu-absen",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"dev": "esno watch -r dotenv/config src/index.ts",
+		"start": "esno -r dotenv/config src/index.ts",
+		"fmt:write": "prettier --write --ignore-path .gitignore .",
+		"fmt:check": "prettier --check --ignore-path .gitignore .",
+		"lint:check": "eslint --ignore-path .gitignore .",
+		"lint:fix": "eslint --fix --ignore-path .gitignore ."
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"@types/diff": "^5.0.2",
+		"diff": "^5.1.0",
+		"grammy": "^1.11.2",
+		"puppeteer": "^19.0.0",
+		"sanitize-html": "^2.7.2"
+	},
+	"type": "module",
+	"devDependencies": {
+		"@types/node": "^18.11.2",
+		"@types/sanitize-html": "^2.6.2",
+		"@typescript-eslint/eslint-plugin": ">=5.31.0",
+		"@typescript-eslint/parser": ">=5.31.0",
+		"dotenv": "^16.0.3",
+		"eslint": "^8.25.0",
+		"prettier": "^2.7.1",
+		"typescript": ">=4.4"
+	}
+}
