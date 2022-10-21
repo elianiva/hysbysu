@@ -1,12 +1,12 @@
-import type { IBrowser } from "~/domain/interfaces/IBrowser";
-import type { IPage } from "~/domain/interfaces/IPage";
-import type { IStorage } from "~/domain/interfaces/IStorage";
+import type { IBrowser } from "./interfaces/IBrowser";
+import type { IPage } from "./interfaces/IPage";
+import type { IStorage } from "./interfaces/IStorage";
+import type { IMeetingCollector } from "./interfaces/ICollector";
 import { NotInitializedError } from "./errors/NotInitializedError";
 import { ValidationError } from "./errors/ValidationError";
 
 type ScraperOptions = {
 	siakadUrl: string;
-	lmsSlcUrl: string;
 	lmsUrl: string;
 	nim: string;
 	password: string;
@@ -15,6 +15,7 @@ type ScraperOptions = {
 type ScraperDeps = {
 	browser: IBrowser;
 	storage: IStorage;
+	collector: IMeetingCollector;
 };
 
 export class Scraper {
@@ -27,29 +28,28 @@ export class Scraper {
 
 	private readonly _siakadUrl: string;
 	private readonly _lmsUrl: string;
-	private readonly _lmsSlcUrl: string;
 	private readonly _nim: string;
 	private readonly _password: string;
 
 	private _storage: IStorage;
 	private _browser: IBrowser;
+	private _collector: IMeetingCollector;
 	private _page: IPage | undefined;
 
 	constructor(options: ScraperOptions, deps: ScraperDeps) {
 		if (options.siakadUrl.length === 0) throw new ValidationError("siakadUrl");
-		if (options.lmsSlcUrl.length === 0) throw new ValidationError("lmsSlcUrl");
 		if (options.lmsUrl.length === 0) throw new ValidationError("lmsUrl");
 		if (options.nim.length === 0) throw new ValidationError("nim");
 		if (options.password.length === 0) throw new ValidationError("password");
 
 		this._siakadUrl = options.siakadUrl;
-		this._lmsSlcUrl = options.lmsSlcUrl;
 		this._lmsUrl = options.lmsUrl;
 		this._nim = options.nim;
 		this._password = options.password;
 
 		this._browser = deps.browser;
 		this._storage = deps.storage;
+		this._collector = deps.collector;
 	}
 
 	/**
@@ -97,20 +97,16 @@ export class Scraper {
 		if (this._browser === undefined) throw new NotInitializedError("this._browser");
 		if (this._page === undefined) throw new NotInitializedError("this._page");
 
-		const ids = await this._page.getAttributesFromElements(this.LECTURE_URL, "href");
+		const urls = await this._page.getAttributesFromElements(this.LECTURE_URL, "href");
 		const timestamp = Date.now();
-		const tasks = ids.map(async (id) => {
+		const tasks = urls.map(async (url) => {
 			const page = await this._browser.newPage();
-			await page.visit(this.createRedirectUrl(id));
-			const html = await page.getContent({ sanitized: true });
-			await this._storage.saveTo(`${timestamp}_${id}.html`, html);
+			await page.visit(this._lmsUrl + url);
+			const html = await page.getContent({ sanitized: false });
+			const meetings = this._collector.collect(html);
+			await this._storage.saveTo(`${timestamp}_${url.slice(-4)}.json`, JSON.stringify(meetings));
+			await page.close();
 		});
 		await Promise.all(tasks);
-	}
-
-	private createRedirectUrl(id: string): string {
-		const lmsSlcUrl = encodeURIComponent(`${this._lmsSlcUrl}/view.php?id=${id}`);
-		const url = `${this._lmsUrl}?gotourl=${lmsSlcUrl}`;
-		return url;
 	}
 }

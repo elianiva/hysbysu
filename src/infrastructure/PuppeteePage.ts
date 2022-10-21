@@ -1,25 +1,21 @@
 import type { Page } from "puppeteer";
 import type { IPage } from "~/domain/interfaces/IPage";
-import type { ISanitizer } from "~/domain/interfaces/ISanitizer";
 
 /**
  * A wrapper around Puppeteer's Page class which automatically disables images, css, and fonts from loading.
  */
 export class PuppeteerPage implements IPage {
 	private readonly _page: Page;
-	private readonly _sanitizer: ISanitizer;
 
-	constructor(page: Page, sanitizer: ISanitizer) {
+	constructor(page: Page) {
 		this._page = page;
-		this._sanitizer = sanitizer;
 		this.attachInterceptor(this._page);
+		// TODO: remove
+		this._page.setDefaultTimeout(120000);
 	}
 
-	public async getContent(opts?: { sanitized: boolean }): Promise<string> {
+	public async getContent(): Promise<string> {
 		const rawContent = await this._page.content();
-		if (opts?.sanitized) {
-			return this._sanitizer.sanitize(rawContent);
-		}
 		return rawContent;
 	}
 
@@ -27,7 +23,7 @@ export class PuppeteerPage implements IPage {
 		await this._page.waitForFunction((s) => !!document.querySelectorAll(s), {}, selector);
 		const classIds = await this._page.$$eval(
 			selector,
-			(elements, name) => elements.map((el) => el.getAttribute(name)?.slice(-4)),
+			(elements, name) => elements.map((el) => el.getAttribute(name)),
 			attributeName
 		);
 		return classIds?.filter((id): id is string => id !== undefined) ?? [];

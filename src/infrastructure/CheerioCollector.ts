@@ -2,7 +2,6 @@ import * as cheerio from "cheerio";
 import type { IMeetingCollector } from "~/domain/interfaces/ICollector";
 import { Meeting } from "~/domain/Meeting";
 import { Lecture } from "~/domain/Lecture";
-import { readFile } from "fs/promises";
 
 export class CheerioCollector implements IMeetingCollector {
 	private readonly TOPIC_ITEM = ".topics > li[id^='section-'] .content";
@@ -31,8 +30,8 @@ export class CheerioCollector implements IMeetingCollector {
 						const isAssignment = el.attribs["class"].includes(this.MODTYPE_ASSIGNMENT);
 
 						return new Lecture({
-							name: activityInstance.find(this.INSTANCE_NAME).text(),
-							url: activityInstance.attr("href") ?? "",
+							name: activityInstance.find(this.INSTANCE_NAME).text() || "Unknown",
+							url: activityInstance.attr("href") || "/",
 							type: isResource ? "material" : isAssignment ? "assignment" : "unknown",
 						});
 					})
@@ -49,7 +48,3 @@ export class CheerioCollector implements IMeetingCollector {
 		return topics;
 	}
 }
-
-const collector = new CheerioCollector();
-const result = collector.collect((await readFile("./snapshots/foo.html")).toString());
-console.log(result);

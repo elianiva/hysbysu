@@ -17,10 +17,10 @@
 	"license": "ISC",
 	"dependencies": {
 		"@types/diff": "^5.0.2",
+		"cheerio": "1.0.0-rc.12",
 		"diff": "^5.1.0",
 		"grammy": "^1.11.2",
-		"puppeteer": "^19.0.0",
-		"sanitize-html": "^2.7.2"
+		"puppeteer": "^19.0.0"
 	},
 	"type": "module",
 	"devDependencies": {

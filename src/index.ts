@@ -1,34 +1,32 @@
 import { launch } from "puppeteer";
-import { IS_DEV, LMS_SLC_URL, LMS_URL, NIM, PASSWORD, SIAKAD_URL } from "./env";
+import { IS_DEV, LMS_URL, NIM, PASSWORD, SIAKAD_URL } from "./env";
 import { Scraper } from "./domain/Scraper";
-import { HtmlSanitizer } from "./infrastructure/HtmlSanitizer";
 import { PuppeteerBrowser } from "./infrastructure/PuppeteerBrowser";
 import { FileStorage } from "./infrastructure/FileStorage";
 import { App } from "./application/App";
+import { CheerioCollector } from "./infrastructure/CheerioCollector";
 
 const browserInstance = await launch({
 	headless: !IS_DEV,
 	args: ["--no-sandbox", "--disable-gpu"],
 });
 
-const sanitizer = new HtmlSanitizer();
-const puppeteerBrowser = new PuppeteerBrowser(browserInstance, sanitizer);
 const fileStorage = new FileStorage();
-
+const cheerioCollector = new CheerioCollector();
+const puppeteerBrowser = new PuppeteerBrowser(browserInstance);
 const scraper = new Scraper(
 	{
 		siakadUrl: SIAKAD_URL,
 		lmsUrl: LMS_URL,
-		lmsSlcUrl: LMS_SLC_URL,
 		nim: NIM,
 		password: PASSWORD,
 	},
 	{
 		browser: puppeteerBrowser,
 		storage: fileStorage,
+		collector: cheerioCollector,
 	}
 );
 
 const app = new App(scraper);
-
 await app.runScraper();

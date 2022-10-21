@@ -5,5 +5,5 @@ export interface IPage {
 	waitForNetworkIdle(): Promise<void>;
 	close(): Promise<void>;
 	getAttributesFromElements(selector: string, attributeName: string): Promise<string[]>;
-	getContent(opts: { sanitized: boolean }): Promise<string>;
+	getContent(): Promise<string>;
 }

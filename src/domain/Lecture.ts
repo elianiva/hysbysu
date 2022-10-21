@@ -3,7 +3,7 @@ import { ValidationError } from "./errors/ValidationError";
 type LectureOptions = {
 	name: string;
 	url: string;
-	type: "material" | "assignment";
+	type: "material" | "assignment" | "unknown";
 };
 
 export class Lecture {

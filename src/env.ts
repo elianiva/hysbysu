@@ -5,4 +5,3 @@ export const NIM = process.env.NIM ?? "";
 export const PASSWORD = process.env.PASSWORD ?? "";
 export const SIAKAD_URL = process.env.SIAKAD_URL ?? "";
 export const LMS_URL = process.env.LMS_URL ?? "";
-export const LMS_SLC_URL = process.env.LMS_SLC_URL ?? "";
