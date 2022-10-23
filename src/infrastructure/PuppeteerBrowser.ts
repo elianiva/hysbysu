@@ -10,6 +10,11 @@ export class PuppeteerBrowser implements IBrowser {
 		this._browser = browser;
 	}
 
+	public async getPages(): Promise<IPage[]> {
+		const pages = await this._browser.pages();
+		return pages.map((page) => new PuppeteerPage(page));
+	}
+
 	public async getFirstPage(): Promise<IPage> {
 		const page = (await this._browser.pages())[0];
 		return new PuppeteerPage(page);

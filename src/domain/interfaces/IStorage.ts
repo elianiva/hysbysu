@@ -1,3 +1,5 @@
 export interface IStorage {
-	saveTo(filename: string, content: string): Promise<void>;
+	put(key: string, value: string): Promise<void>;
+	get(key: string): Promise<string>;
+	getAllEntriesName(): Promise<string[]>;
 }

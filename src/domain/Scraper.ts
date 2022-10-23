@@ -69,7 +69,14 @@ export class Scraper {
 		await this.login();
 		await this.goToLMS();
 		await this.savePageSnapshots();
-		await this._page.close();
+		await this.cleanUp();
+	}
+
+	private async cleanUp() {
+		const pages = await this._browser.getPages();
+		for await (const page of pages) {
+			page.close();
+		}
 	}
 
 	private async login() {
@@ -102,9 +109,9 @@ export class Scraper {
 		const tasks = urls.map(async (url) => {
 			const page = await this._browser.newPage();
 			await page.visit(this._lmsUrl + url);
-			const html = await page.getContent({ sanitized: false });
+			const html = await page.getContent();
 			const meetings = this._collector.collect(html);
-			await this._storage.saveTo(`${timestamp}_${url.slice(-4)}.json`, JSON.stringify(meetings));
+			await this._storage.put(`${timestamp}_${url.slice(-4)}`, JSON.stringify(meetings));
 			await page.close();
 		});
 		await Promise.all(tasks);
