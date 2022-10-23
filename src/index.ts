@@ -1,12 +1,11 @@
 import { launch } from "puppeteer";
-import { BOT_TOKEN, IS_DEV, LMS_URL, NIM, PASSWORD, SIAKAD_URL } from "./env";
+import { IS_DEV, LMS_URL, NIM, PASSWORD, SIAKAD_URL } from "./env";
 import { Scraper } from "./domain/Scraper";
 import { PuppeteerBrowser } from "./infrastructure/PuppeteerBrowser";
 import { FileStorage } from "./infrastructure/FileStorage";
 import { App } from "./application/App";
 import { CheerioCollector } from "./infrastructure/CheerioCollector";
-import { Bot } from "grammy";
-import { TelegramPresenter } from "./presentation/TelegramPresenter";
+import { DummyPresenter } from "./presentation/DummyPresenter";
 
 const browserInstance = await launch({
 	headless: !IS_DEV,
@@ -29,12 +28,11 @@ const scraper = new Scraper(
 		collector: cheerioCollector,
 	}
 );
-const bot = new Bot(BOT_TOKEN);
-const telegramPresenter = new TelegramPresenter(bot);
+const dummyPresenter = new DummyPresenter();
 
 const app = new App({
 	scraper: scraper,
-	presenter: telegramPresenter,
+	presenter: dummyPresenter,
 	storage: fileStorage,
 });
 
