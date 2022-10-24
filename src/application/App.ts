@@ -1,10 +1,11 @@
-import { detailedDiff } from "deep-object-diff";
+import deepDiff, { DiffArray, DiffNew } from "deep-diff";
 import type { IStorage } from "~/domain/interfaces/IStorage";
-import { Meeting } from "~/domain/Meeting";
+import type { Lecture } from "~/domain/Lecture";
+import type { Meeting } from "~/domain/Meeting";
+import { MeetingUpdate, MeetingUpdateKind } from "~/domain/MeetingUpdate";
 import type { Scraper } from "~/domain/Scraper";
 import { IS_DEV } from "~/env";
 import type { IPresenter } from "./interfaces/IPresenter";
-import type { DetailedDiff } from "./types/DetailedDiff";
 
 export type AppDeps = {
 	scraper: Scraper;
@@ -57,35 +58,61 @@ export class App {
 
 		if (newFiles.length !== oldFiles.length) throw new Error("old data and new data didn't match!");
 
+		const updates: MeetingUpdate[] = [];
 		for (const [oldFileIndex, oldFile] of oldFiles.entries()) {
-			const parsedOldFile = JSON.parse(oldFile);
+			const parsedOldFile = JSON.parse(oldFile) as Meeting[];
 			// use `oldFileIndex` here because we want to compare the matching new file with the old file
-			const parsedNewFile = JSON.parse(newFiles[oldFileIndex]);
+			const parsedNewFile = JSON.parse(newFiles[oldFileIndex]) as Meeting[];
 
-			for (const [oldSubjectIndex, oldSubjects] of parsedOldFile.entries()) {
-				// also use `oldSubjectIndex` for the same reason as above
-				const newSubjects = parsedNewFile[oldSubjectIndex];
-				const diff = detailedDiff(oldSubjects, newSubjects) as DetailedDiff;
-				console.log(diff);
-				if (!this.isObjectEmpty(diff.added)) {
-					const addedKeys = Object.keys(diff.added);
-					const addedEntries = this.pickEntries<Record<string, any>>(oldSubjects, addedKeys);
-					const meetings = addedEntries.map(
-						(entry) =>
-							new Meeting({
-								lectures: entry?.["lectures"] ?? [],
-								subject: entry?.["subject"] ?? "",
-								title: entry?.["title"] ?? "",
-							})
-					);
-					console.log(meetings);
+			const diffItems = deepDiff.diff(parsedOldFile, parsedNewFile);
+			if (diffItems === undefined) continue;
+
+			const listUpdates = diffItems.filter((diff): diff is DiffArray<any, any> => diff.kind === "A");
+
+			const meetingUpdates = listUpdates.filter(
+				(update) => update.path === undefined && update.item.kind === "N"
+			);
+			for (const meetingDiff of meetingUpdates) {
+				const meetingItem = meetingDiff.item as DiffNew<any>;
+				updates.push(
+					new MeetingUpdate({
+						title: meetingItem.rhs.title,
+						subject: meetingItem.rhs.subject,
+						lectures: meetingItem.rhs.lectures,
+						kind: MeetingUpdateKind.NEW,
+					})
+				);
+			}
+
+			// group lecture updates that has a same parents
+			const lectureUpdates = listUpdates.reduce((acc, curr) => {
+				// should be impossible but who knows
+				// I couldn't get the typing right
+				if (curr.path === undefined) return acc;
+
+				const meetingIndex = curr.path[0];
+				if (curr.path !== undefined) {
+					const lectures = acc.get(meetingIndex) ?? [];
+					const updatedLectures = lectures.concat((curr.item as DiffNew<any>).rhs);
+					acc.set(meetingIndex, updatedLectures);
 				}
+				return acc;
+			}, new Map<number, Lecture[]>());
 
-				// if (!this.isObjectEmpty(diff.updated)) {
-				// 	this._presenter.notify(Object.values(diff.removed));
-				// }
+			for (const [meetingIndex, newLectures] of lectureUpdates.entries()) {
+				const meeting = parsedNewFile[meetingIndex];
+				updates.push(
+					new MeetingUpdate({
+						title: meeting.title,
+						subject: meeting.subject,
+						lectures: newLectures,
+						kind: MeetingUpdateKind.EDITED,
+					})
+				);
 			}
 		}
+
+		console.log(updates);
 
 		// remove old files since we don't need them anymore after we get the diff
 		for (const entry of oldEntries) {

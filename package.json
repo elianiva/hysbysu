@@ -18,14 +18,14 @@
 	"dependencies": {
 		"@types/diff": "^5.0.2",
 		"cheerio": "1.0.0-rc.12",
-		"deep-object-diff": "^1.1.7",
+		"deep-diff": "^1.0.2",
 		"grammy": "^1.11.2",
 		"puppeteer": "^19.0.0"
 	},
 	"type": "module",
 	"devDependencies": {
+		"@types/deep-diff": "^1.0.1",
 		"@types/node": "^18.11.2",
-		"@types/sanitize-html": "^2.6.2",
 		"@typescript-eslint/eslint-plugin": ">=5.31.0",
 		"@typescript-eslint/parser": ">=5.31.0",
 		"dotenv": "^16.0.3",

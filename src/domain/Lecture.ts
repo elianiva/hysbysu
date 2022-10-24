@@ -12,9 +12,9 @@ export class Lecture {
 	public readonly type: LectureOptions["type"];
 
 	constructor(opts: LectureOptions) {
-		if (opts.name.length < 1) throw new ValidationError("name");
-		if (opts.url.length < 1) throw new ValidationError("url");
-		if (opts.type.length < 1) throw new ValidationError("type");
+		if (opts.name === undefined || opts.name.length < 1) throw new ValidationError("name");
+		if (opts.name === undefined || opts.url.length < 1) throw new ValidationError("url");
+		if (opts.name === undefined || opts.type.length < 1) throw new ValidationError("type");
 
 		this.name = opts.name;
 		this.url = opts.url;
