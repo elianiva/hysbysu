@@ -11,9 +11,12 @@ export class FileStorage implements IStorage {
 		this._snapshotDir = path.join(this._basePath, snapshotDir ?? "snapshots");
 	}
 
+	/**
+	 * Get a list of entries name in a chronological order
+	 */
 	public async getAllEntriesName(): Promise<string[]> {
 		const files = await readdir(this._snapshotDir);
-		return files.filter((file) => !file.startsWith("."));
+		return files.filter((file) => !file.startsWith(".")).sort();
 	}
 
 	public async put(key: string, value: string): Promise<void> {

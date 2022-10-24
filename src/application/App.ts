@@ -33,8 +33,8 @@ export class App {
 
 	private async compareFiles() {
 		const entriesName = await this._storage.getAllEntriesName();
-		const firstEntryName = entriesName.at(0);
-		const oldEntryName = entriesName.at(-1);
+		const oldEntryName = entriesName.at(0);
+		const firstEntryName = entriesName.at(-1);
 
 		const firstTimestamp = firstEntryName?.split("_").at(0);
 		const oldTimestamp = oldEntryName?.split("_").at(0);
@@ -44,7 +44,6 @@ export class App {
 
 		// no new files
 		// TODO(elianiva): figure out what to do, we don't want noop
-		console.log({ firstEntryName, oldTimestamp });
 		if (firstTimestamp === oldTimestamp) return;
 
 		const currentTimeEntries = entriesName.filter((name) => name.startsWith(firstTimestamp));
