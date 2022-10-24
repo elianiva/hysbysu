@@ -1,4 +1,4 @@
-import { mkdir, stat, writeFile, readFile, readdir } from "fs/promises";
+import { mkdir, stat, writeFile, readFile, readdir, rm } from "fs/promises";
 import path from "path";
 import type { IStorage } from "~/domain/interfaces/IStorage";
 
@@ -13,7 +13,7 @@ export class FileStorage implements IStorage {
 
 	public async getAllEntriesName(): Promise<string[]> {
 		const files = await readdir(this._snapshotDir);
-		return files;
+		return files.filter((file) => !file.startsWith("."));
 	}
 
 	public async put(key: string, value: string): Promise<void> {
@@ -24,6 +24,10 @@ export class FileStorage implements IStorage {
 	public async get(key: string): Promise<string> {
 		const file = await readFile(path.join(this._snapshotDir, key));
 		return file.toString();
+	}
+
+	public async remove(key: string): Promise<void> {
+		await rm(path.join(this._snapshotDir, key));
 	}
 
 	private async prepareDirectory() {

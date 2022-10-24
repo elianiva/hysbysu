@@ -64,8 +64,7 @@ export class Scraper {
 	 * Scrapes the LMS for any new resource
 	 */
 	public async scrape() {
-		if (this._page === undefined) throw new NotInitializedError("this._page");
-
+		await this.init();
 		await this.login();
 		await this.goToLMS();
 		await this.savePageSnapshots();
@@ -73,10 +72,8 @@ export class Scraper {
 	}
 
 	private async cleanUp() {
-		const pages = await this._browser.getPages();
-		for await (const page of pages) {
-			page.close();
-		}
+		await this._browser.close();
+		this._page = undefined;
 	}
 
 	private async login() {
