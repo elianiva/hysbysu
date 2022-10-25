@@ -1,4 +1,6 @@
-FROM zenika/alpine-chrome:100-with-node-16
+FROM node:19-alpine
+
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 
 USER root
 WORKDIR /home/app

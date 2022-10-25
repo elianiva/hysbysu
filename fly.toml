@@ -1,4 +1,4 @@
-# fly.toml file generated for babu-absen on 2022-10-25T17:08:55+07:00
+# fly.toml file generated for babu-absen on 2022-10-25T21:18:21+07:00
 
 app = "babu-absen"
 kill_signal = "SIGINT"

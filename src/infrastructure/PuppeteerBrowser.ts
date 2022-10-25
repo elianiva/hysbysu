@@ -1,26 +1,30 @@
-import { Browser, launch } from "puppeteer";
+import puppeteer, { type Browser } from "puppeteer";
 import type { IBrowser } from "~/domain/interfaces/IBrowser";
 import type { IPage } from "~/domain/interfaces/IPage";
-import { CHROME_BIN, IS_DEV } from "~/env";
-import { PuppeteerPage } from "./PuppeteePage";
+import { BROWSERLESS_API_TOKEN, CHROME_BIN, IS_DEV } from "~/env";
+import { PuppeteerPage } from "./PuppeteerPage";
 
 export class PuppeteerBrowser implements IBrowser {
 	private _browser: Browser | undefined;
 
 	public async launch(): Promise<void> {
 		if (this._browser !== undefined) return;
-		this._browser = await launch({
-			headless: !IS_DEV,
-			args: [
-				// Required for Docker version of Puppeteer
-				"--no-sandbox",
-				"--disable-setuid-sandbox",
-				// This will write shared memory files into /tmp instead of /dev/shm,
-				// because Docker’s default for /dev/shm is 64MB
-				"--disable-dev-shm-usage",
-			],
-			executablePath: IS_DEV ? undefined : CHROME_BIN,
-		});
+		this._browser = IS_DEV
+			? await puppeteer.launch({
+					headless: !IS_DEV,
+					args: [
+						// Required for Docker version of Puppeteer
+						"--no-sandbox",
+						"--disable-setuid-sandbox",
+						// This will write shared memory files into /tmp instead of /dev/shm,
+						// because Docker’s default for /dev/shm is 64MB
+						"--disable-dev-shm-usage",
+					],
+					executablePath: IS_DEV ? undefined : CHROME_BIN,
+			  })
+			: await puppeteer.connect({
+					browserWSEndpoint: `wss://chrome.browserless.io?token=${BROWSERLESS_API_TOKEN}`,
+			  });
 	}
 
 	public async close(): Promise<void> {
