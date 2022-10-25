@@ -18,14 +18,15 @@ export class DiscordPresenter implements IPresenter {
 		if (channel === undefined) throw new Error("invalid discord channel id");
 
 		const embed = this.createEmbed(meeting);
-		const file = new AttachmentBuilder("http://jti.polinema.ac.id/ruangkelas/assets/images/ruang/jti.png");
-		embed.setImage("attachment://jti.png");
-
-		await channel.send({ embeds: [embed], files: [file] });
+		await channel.send({ embeds: [embed] });
 	}
 
 	private createEmbed(meeting: MeetingUpdate) {
 		const embed = new EmbedBuilder();
+		embed.setThumbnail(
+			"https://media.discordapp.net/attachments/1034341084735754260/1034370197429157888/unknown.png"
+		);
+		embed.setDescription("inpo gaes ada beban baru");
 
 		if (meeting.kind === MeetingUpdateKind.NEW) {
 			embed.setColor(0x61afef).setTitle("📚 New meeting has been added!");

@@ -30,9 +30,16 @@ export class App {
 	public async runScraper() {
 		await this._scraper.init();
 		while (true) {
-			await this._scraper.scrape();
-			await this.compareFiles();
-			await this.sleep(this.SCRAPE_INTERVAL);
+			try {
+				await this._scraper.scrape();
+				await this.compareFiles();
+				await this.sleep(this.SCRAPE_INTERVAL);
+			} catch (err) {
+				// TODO(elianiva): implement a proper error logging
+				if (err instanceof Error) {
+					console.error(err.message);
+				}
+			}
 		}
 	}
 
