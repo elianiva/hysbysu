@@ -34,9 +34,9 @@ export class TelegramPresenter implements IPresenter {
 		if (assignments.length > 0) {
 			message += this.buildLectureList("Assignments", assignments);
 		}
-		const materials = meeting.lectures.filter((lecture) => lecture.type === "resource");
-		if (materials.length > 0) {
-			message += this.buildLectureList("Resources", materials);
+		const resources = meeting.lectures.filter((lecture) => lecture.type === "resource");
+		if (resources.length > 0) {
+			message += this.buildLectureList("Resources", resources);
 		}
 		const quizzes = meeting.lectures.filter((lecture) => lecture.type === "quiz");
 		if (quizzes.length > 0) {
