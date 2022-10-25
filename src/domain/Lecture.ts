@@ -1,9 +1,11 @@
 import { ValidationError } from "./errors/ValidationError";
 
+export type LectureType = "resource" | "assignment" | "url" | "quiz" | "unknown";
+
 type LectureOptions = {
 	name: string;
 	url: string;
-	type: "material" | "assignment" | "unknown";
+	type: LectureType;
 };
 
 export class Lecture {
