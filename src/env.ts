@@ -7,3 +7,5 @@ export const SIAKAD_URL = process.env.SIAKAD_URL ?? "";
 export const LMS_URL = process.env.LMS_URL ?? "";
 export const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
 export const TELEGRAM_USER_ID = process.env.TELEGRAM_USER_ID ?? "";
+export const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? "";
+export const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID ?? "";
