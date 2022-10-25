@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  app:
+    build: .
+    deploy:
+      replicas: 1
+    secrets:
+      - secret_env
+secrets:
+  secret_env:
+    file: .env

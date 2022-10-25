@@ -4,9 +4,8 @@ import type { Lecture } from "~/domain/Lecture";
 import type { Meeting } from "~/domain/Meeting";
 import { MeetingUpdate, MeetingUpdateKind } from "~/domain/MeetingUpdate";
 import type { Scraper } from "~/domain/Scraper";
-import { IS_DEV } from "~/env";
+import { IS_DEV, SCRAPE_INTERVAL } from "~/env";
 import type { IHub } from "./interfaces/IHub";
-import type { IPresenter } from "./interfaces/IPresenter";
 
 export type AppDeps = {
 	scraper: Scraper;
@@ -16,7 +15,7 @@ export type AppDeps = {
 
 export class App {
 	// 10 minutes on dev, 1 hour on any other env
-	private readonly SCRAPE_INTERVAL = IS_DEV ? 10 * 1000 : 60 * 60 * 1000;
+	private readonly SCRAPE_INTERVAL = IS_DEV ? 10 * 1000 : parseInt(SCRAPE_INTERVAL);
 	private readonly _scraper: AppDeps["scraper"];
 	private readonly _storage: AppDeps["storage"];
 	private readonly _hub: AppDeps["hub"];

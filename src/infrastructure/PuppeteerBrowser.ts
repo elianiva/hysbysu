@@ -1,7 +1,7 @@
 import { Browser, launch } from "puppeteer";
 import type { IBrowser } from "~/domain/interfaces/IBrowser";
 import type { IPage } from "~/domain/interfaces/IPage";
-import { IS_DEV } from "~/env";
+import { CHROME_BIN, IS_DEV } from "~/env";
 import { PuppeteerPage } from "./PuppeteePage";
 
 export class PuppeteerBrowser implements IBrowser {
@@ -11,7 +11,15 @@ export class PuppeteerBrowser implements IBrowser {
 		if (this._browser !== undefined) return;
 		this._browser = await launch({
 			headless: !IS_DEV,
-			args: ["--no-sandbox", "--disable-gpu"],
+			args: [
+				// Required for Docker version of Puppeteer
+				"--no-sandbox",
+				"--disable-setuid-sandbox",
+				// This will write shared memory files into /tmp instead of /dev/shm,
+				// because Docker’s default for /dev/shm is 64MB
+				"--disable-dev-shm-usage",
+			],
+			executablePath: IS_DEV ? undefined : CHROME_BIN,
 		});
 	}
 
@@ -26,7 +34,7 @@ export class PuppeteerBrowser implements IBrowser {
 			const pages = await this._browser!.pages();
 			return pages?.map((page) => new PuppeteerPage(page)) ?? [];
 		} catch (err) {
-			throw new Error("Failed to launch browser");
+			throw err;
 		}
 	}
 
@@ -40,7 +48,7 @@ export class PuppeteerBrowser implements IBrowser {
 			if (page === undefined) return this.newPage();
 			return new PuppeteerPage(page);
 		} catch (err) {
-			throw new Error("failed to launch browser");
+			throw err;
 		}
 	}
 
@@ -50,7 +58,7 @@ export class PuppeteerBrowser implements IBrowser {
 			const page = await this._browser!.newPage();
 			return new PuppeteerPage(page);
 		} catch (err) {
-			throw new Error("failed to launch browser");
+			throw err;
 		}
 	}
 }
