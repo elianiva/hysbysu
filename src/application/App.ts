@@ -1,4 +1,5 @@
 import deepDiff, { DiffArray, DiffNew } from "deep-diff";
+import type { ILogger } from "~/domain/interfaces/ILogger";
 import type { IStorage } from "~/domain/interfaces/IStorage";
 import type { Lecture } from "~/domain/Lecture";
 import type { Meeting } from "~/domain/Meeting";
@@ -11,28 +12,32 @@ export type AppDeps = {
 	scraper: Scraper;
 	storage: IStorage;
 	hub: IHub;
+	logger: ILogger;
 };
 
 export class App {
-	// 10 minutes on dev, 1 hour on any other env
-	private readonly SCRAPE_INTERVAL = IS_DEV ? 10 * 1000 : parseInt(SCRAPE_INTERVAL);
 	private readonly _scraper: AppDeps["scraper"];
 	private readonly _storage: AppDeps["storage"];
 	private readonly _hub: AppDeps["hub"];
+	private readonly _logger: AppDeps["logger"];
 
 	constructor(deps: AppDeps) {
 		this._scraper = deps.scraper;
 		this._hub = deps.hub;
 		this._storage = deps.storage;
+		this._logger = deps.logger;
 	}
 
 	public async runScraper() {
 		await this._scraper.init();
 		while (true) {
 			try {
+				this._logger.info("Scraping...");
 				await this._scraper.scrape();
+				this._logger.info("Comparing files...");
 				await this.compareFiles();
-				await this.sleep(this.SCRAPE_INTERVAL);
+				this._logger.info("Scraping done!");
+				await new Promise((res) => setTimeout(() => res(undefined), IS_DEV ? 10 * 1000 : SCRAPE_INTERVAL));
 			} catch (err) {
 				// TODO(elianiva): implement a proper error logging
 				if (err instanceof Error) {
@@ -65,6 +70,7 @@ export class App {
 
 		if (newFiles.length !== oldFiles.length) throw new Error("old data and new data didn't match!");
 
+		this._logger.info("Comparing entries");
 		const updates = this.getMeetingUpdates(oldFiles, newFiles);
 		for (const update of updates) {
 			this._hub.emit(update);
@@ -133,9 +139,5 @@ export class App {
 		}
 
 		return updates;
-	}
-
-	private async sleep(duration: number) {
-		return new Promise((res) => setTimeout(() => res(undefined), duration));
 	}
 }

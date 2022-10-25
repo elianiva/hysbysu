@@ -19,6 +19,7 @@
 	"dependencies": {
 		"@types/diff": "^5.0.2",
 		"cheerio": "1.0.0-rc.12",
+		"colorette": "^2.0.19",
 		"deep-diff": "^1.0.2",
 		"discord.js": "^14.6.0",
 		"grammy": "^1.11.2",

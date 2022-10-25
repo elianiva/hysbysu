@@ -10,7 +10,9 @@ import { TelegramPresenter } from "./presentation/TelegramPresenter";
 import { Bot } from "grammy";
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import { DiscordPresenter } from "./presentation/DiscordPresenter";
+import { ConsoleLogger } from "./infrastructure/ConsoleLogger";
 
+const consoleLogger = new ConsoleLogger();
 const fileStorage = new FileStorage();
 const cheerioCollector = new CheerioCollector();
 const puppeteerBrowser = new PuppeteerBrowser();
@@ -25,6 +27,7 @@ const scraper = new Scraper(
 		browser: puppeteerBrowser,
 		storage: fileStorage,
 		collector: cheerioCollector,
+		logger: consoleLogger,
 	}
 );
 
@@ -36,13 +39,14 @@ hub.addPresenter(new TelegramPresenter(bot, TELEGRAM_USER_ID));
 
 const discordClient = new Client({ intents: [GatewayIntentBits.Guilds] });
 discordClient.login(DISCORD_BOT_TOKEN);
-discordClient.on(Events.ClientReady, () => console.info("Discord client is ready!"));
+discordClient.on(Events.ClientReady, () => consoleLogger.info("Discord client is ready!"));
 hub.addPresenter(new DiscordPresenter(discordClient));
 
 const app = new App({
 	scraper: scraper,
 	storage: fileStorage,
 	hub: hub,
+	logger: consoleLogger,
 });
 
 await app.runScraper();

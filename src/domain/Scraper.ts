@@ -4,6 +4,7 @@ import type { IStorage } from "./interfaces/IStorage";
 import type { IMeetingCollector } from "./interfaces/ICollector";
 import { NotInitializedError } from "./errors/NotInitializedError";
 import { ValidationError } from "./errors/ValidationError";
+import type { ILogger } from "./interfaces/ILogger";
 
 type ScraperOptions = {
 	siakadUrl: string;
@@ -16,6 +17,7 @@ type ScraperDeps = {
 	browser: IBrowser;
 	storage: IStorage;
 	collector: IMeetingCollector;
+	logger: ILogger;
 };
 
 export class Scraper {
@@ -31,9 +33,10 @@ export class Scraper {
 	private readonly _nim: string;
 	private readonly _password: string;
 
-	private _storage: IStorage;
-	private _browser: IBrowser;
-	private _collector: IMeetingCollector;
+	private readonly _storage: ScraperDeps["storage"];
+	private readonly _browser: ScraperDeps["browser"];
+	private readonly _collector: ScraperDeps["collector"];
+	private readonly _logger: ScraperDeps["logger"];
 	private _page: IPage | undefined;
 
 	constructor(options: ScraperOptions, deps: ScraperDeps) {
@@ -50,6 +53,7 @@ export class Scraper {
 		this._browser = deps.browser;
 		this._storage = deps.storage;
 		this._collector = deps.collector;
+		this._logger = deps.logger;
 	}
 
 	/**
@@ -64,10 +68,15 @@ export class Scraper {
 	 * Scrapes the LMS for any new resource
 	 */
 	public async scrape() {
+		this._logger.info("Initialising...");
 		await this.init();
+		this._logger.info("Logging in...");
 		await this.login();
+		this._logger.info("Visiting LMS...");
 		await this.goToLMS();
+		this._logger.info("Saving snapshots...");
 		await this.savePageSnapshots();
+		this._logger.info("Cleaning up...");
 		await this.cleanUp();
 	}
 

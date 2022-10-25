@@ -7,6 +7,7 @@ specifiers:
   '@typescript-eslint/eslint-plugin': '>=5.31.0'
   '@typescript-eslint/parser': '>=5.31.0'
   cheerio: 1.0.0-rc.12
+  colorette: ^2.0.19
   deep-diff: ^1.0.2
   discord.js: ^14.6.0
   dotenv: ^16.0.3
@@ -20,6 +21,7 @@ specifiers:
 dependencies:
   '@types/diff': 5.0.2
   cheerio: 1.0.0-rc.12
+  colorette: 2.0.19
   deep-diff: 1.0.2
   discord.js: 14.6.0
   grammy: 1.11.2
@@ -523,6 +525,10 @@ packages:
   /color-name/1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
     dev: true
+
+  /colorette/2.0.19:
+    resolution: {integrity: sha512-3tlv/dIP7FWvj3BsbHrGLJ6l/oKh1O3TcgBqMn+yyCagOxc23fyzDS6HypQbgxWbkpDnf52p1LuR4eWDQ/K9WQ==}
+    dev: false
 
   /concat-map/0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
