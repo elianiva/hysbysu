@@ -5,6 +5,7 @@ import { FileStorage } from "./infrastructure/FileStorage";
 import { App } from "./application/App";
 import { CheerioCollector } from "./infrastructure/CheerioCollector";
 import { DummyPresenter } from "./presentation/DummyPresenter";
+import { Hub } from "./presentation/Hub";
 
 const fileStorage = new FileStorage();
 const cheerioCollector = new CheerioCollector();
@@ -22,12 +23,14 @@ const scraper = new Scraper(
 		collector: cheerioCollector,
 	}
 );
-const dummyPresenter = new DummyPresenter();
+
+const hub = new Hub();
+hub.addPresenter(new DummyPresenter());
 
 const app = new App({
 	scraper: scraper,
-	presenter: dummyPresenter,
 	storage: fileStorage,
+	hub: hub,
 });
 
 await app.runScraper();

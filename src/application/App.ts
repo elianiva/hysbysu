@@ -5,24 +5,25 @@ import type { Meeting } from "~/domain/Meeting";
 import { MeetingUpdate, MeetingUpdateKind } from "~/domain/MeetingUpdate";
 import type { Scraper } from "~/domain/Scraper";
 import { IS_DEV } from "~/env";
+import type { IHub } from "./interfaces/IHub";
 import type { IPresenter } from "./interfaces/IPresenter";
 
 export type AppDeps = {
 	scraper: Scraper;
-	presenter: IPresenter;
 	storage: IStorage;
+	hub: IHub;
 };
 
 export class App {
 	// 10 minutes on dev, 1 hour on any other env
 	private readonly SCRAPE_INTERVAL = IS_DEV ? 10 * 1000 : 60 * 60 * 1000;
 	private readonly _scraper: AppDeps["scraper"];
-	private readonly _presenter: AppDeps["presenter"];
 	private readonly _storage: AppDeps["storage"];
+	private readonly _hub: AppDeps["hub"];
 
 	constructor(deps: AppDeps) {
 		this._scraper = deps.scraper;
-		this._presenter = deps.presenter;
+		this._hub = deps.hub;
 		this._storage = deps.storage;
 	}
 
@@ -58,7 +59,20 @@ export class App {
 
 		if (newFiles.length !== oldFiles.length) throw new Error("old data and new data didn't match!");
 
+		const updates = this.getMeetingUpdates(oldFiles, newFiles);
+		for (const update of updates) {
+			this._hub.emit(update);
+		}
+
+		// remove old files since we don't need them anymore after we get the diff
+		for (const entry of oldEntries) {
+			this._storage.remove(entry);
+		}
+	}
+
+	private getMeetingUpdates(oldFiles: string[], newFiles: string[]) {
 		const updates: MeetingUpdate[] = [];
+
 		for (const [oldFileIndex, oldFile] of oldFiles.entries()) {
 			const parsedOldFile = JSON.parse(oldFile) as Meeting[];
 			// use `oldFileIndex` here because we want to compare the matching new file with the old file
@@ -112,23 +126,10 @@ export class App {
 			}
 		}
 
-		console.log(updates);
-
-		// remove old files since we don't need them anymore after we get the diff
-		for (const entry of oldEntries) {
-			this._storage.remove(entry);
-		}
+		return updates;
 	}
 
 	private async sleep(duration: number) {
 		return new Promise((res) => setTimeout(() => res(undefined), duration));
-	}
-
-	private isObjectEmpty(obj: object) {
-		return Object.keys(obj).length < 1;
-	}
-
-	private pickEntries<TEntry>(entries: TEntry[], indices: string[]): TEntry[] {
-		return entries.filter((_, index) => indices.includes(index.toString()));
 	}
 }

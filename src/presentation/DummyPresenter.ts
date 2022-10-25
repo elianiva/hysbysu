@@ -1,8 +1,8 @@
 import type { IPresenter } from "~/application/interfaces/IPresenter";
-import type { Meeting } from "~/domain/Meeting";
+import type { MeetingUpdate } from "~/domain/MeetingUpdate";
 
 export class DummyPresenter implements IPresenter {
-	public async notify(id: string, meeting: Meeting): Promise<void> {
-		console.log(id, meeting);
+	public async notify(meeting: MeetingUpdate): Promise<void> {
+		console.log(meeting);
 	}
 }

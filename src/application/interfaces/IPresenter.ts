@@ -1,5 +1,5 @@
-import type { Meeting } from "~/domain/Meeting";
+import type { MeetingUpdate } from "~/domain/MeetingUpdate";
 
 export interface IPresenter {
-	notify(meeting: Meeting): Promise<void>;
+	notify(meeting: MeetingUpdate): Promise<void>;
 }
