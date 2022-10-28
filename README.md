@@ -1,4 +1,4 @@
-# Babu Absen
+# Hysbysu
 
 > A bot that will watch for any updates on my uni LMS.
 
@@ -23,7 +23,7 @@ Unless you can figure it out by yourself, or you're one of my friend in uni, I'm
 I don't feel like giving usage instruction for this app to random people on Github.
 
 ## Why the name?
-Idk, that's the first thing that crossed my mind when scaffolding this project.
+Idk, I picked it randomly, also, it sounds badass. It means 'notify' in welsh
 
 ## Tech stack
 
