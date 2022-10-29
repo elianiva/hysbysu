@@ -27,18 +27,17 @@ func main() {
 
 	scraper := internal.NewScraper(config, client, collector, bot)
 
-	done := make(chan struct{}, 1)
-	errorChannel := make(chan error, 1)
+	doneCh := make(chan struct{}, 1)
+	errorCh := make(chan error, 1)
 
 	for {
 		log.Println("scraping...")
-		scraper.Scrape(config, client, done, errorChannel)
-		log.Println("done scraping!")
+		go scraper.Scrape(config, client, doneCh, errorCh)
 
-		if err := <-errorChannel; err != nil {
+		if err := <-errorCh; err != nil {
 			log.Fatalf("failed to scrape. reason: %v", err)
 		}
 
-		<-done
+		<-doneCh
 	}
 }

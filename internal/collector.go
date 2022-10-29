@@ -137,10 +137,10 @@ func (c GoQueryCollector) collectLecturerInfo(html io.Reader) (model.LecturerInf
 	}
 
 	lecturerName := document.Find(el_lecturerName).First().Text()
-	// TODO: use proper placeholder profile image
-	//       maybe take from the config?
+	// TODO(elianiva): use proper placeholder profile image
+	//                 maybe take from the config?
 	lecturerImage := document.Find(el_summaryImages).Nodes[1]
-	lecturerImageUrl := goquery.NewDocumentFromNode(lecturerImage).AttrOr("src", "https://www.kindpng.com/picc/m/24-248253_user-profile-default-image-png-clipart-png-download.png")
+	lecturerImageUrl := goquery.NewDocumentFromNode(lecturerImage).AttrOr("src", "https://twirpz.files.wordpress.com/2015/06/twitter-avi-gender-balanced-figure.png")
 
 	// conditionally append the protocol to handle the lecturer image source correctly
 	if !strings.HasPrefix(lecturerImageUrl, "https://") {
@@ -177,8 +177,8 @@ func (c GoQueryCollector) CollectSubjects(subjectContent io.Reader) ([]model.Sub
 				return err
 			}
 
-			// TODO: handle this silly stream->string->stream conversion properly
-			//       we can't consume the reader twice
+			// TODO(elianiva): handle this silly stream->string->stream conversion properly
+			//                 we can't consume the reader twice
 			lmsContentStr, err := io.ReadAll(lmsContent)
 			if err != nil {
 				return errors.Wrap(err, "failed to read lms content stream")

@@ -33,20 +33,20 @@ func NewScraper(config Config, client *HttpClient, collector Collector, presente
 	return &Scraper{config, client, collector, presenter}
 }
 
-func (s *Scraper) Scrape(config Config, client *HttpClient, done chan struct{}, errorChannel chan error) {
+func (s *Scraper) Scrape(config Config, client *HttpClient, doneCh chan struct{}, errorCh chan error) {
 	err := s.client.CollectCookies()
 	if err != nil {
-		errorChannel <- errors.Wrap(err, "failed to collect cookies")
+		errorCh <- errors.Wrap(err, "failed to collect cookies")
 	}
 
 	subjectContent, err := s.client.FetchSubjectsContent()
 	if err != nil {
-		errorChannel <- errors.Wrap(err, "failed to fetch lhs list content")
+		errorCh <- errors.Wrap(err, "failed to fetch lhs list content")
 	}
 
 	newSubjects, err := s.collector.CollectSubjects(subjectContent)
 	if err != nil {
-		errorChannel <- errors.Wrap(err, "failed to collect lhs detail")
+		errorCh <- errors.Wrap(err, "failed to collect lhs detail")
 	}
 
 	eg, _ := errgroup.WithContext(context.TODO())
@@ -98,7 +98,7 @@ func (s *Scraper) Scrape(config Config, client *HttpClient, done chan struct{}, 
 	}
 	err = eg.Wait()
 	if err != nil {
-		errorChannel <- errors.Wrap(err, "failed to save the snapshots")
+		errorCh <- errors.Wrap(err, "failed to save the snapshots")
 	}
 
 	log.Println("cleaning up cookies...")
@@ -107,8 +107,8 @@ func (s *Scraper) Scrape(config Config, client *HttpClient, done chan struct{}, 
 	log.Println("waiting interval...")
 	time.Sleep(s.config.ScrapeInterval)
 
-	errorChannel <- nil
-	done <- struct{}{}
+	errorCh <- nil
+	doneCh <- struct{}{}
 }
 
 func (s *Scraper) GetMeetingsDiff(oldSubject model.Subject, newSubject model.Subject) []model.Meeting {
