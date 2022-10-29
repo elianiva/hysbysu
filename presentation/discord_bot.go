@@ -4,6 +4,7 @@ import (
 	"hysbysu/internal"
 	"hysbysu/model"
 	"log"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -45,6 +46,10 @@ func (bot DiscordBot) Notify(subject model.Subject) error {
 			},
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
 				URL: "https://media.discordapp.net/attachments/1034341084735754260/1034370197429157888/unknown.png",
+			},
+			Timestamp: time.Now().Format(time.RFC3339),
+			Footer: &discordgo.MessageEmbedFooter{
+				Text: "kalo ada tugas buru dikerjain, gausah ditunda tunda",
 			},
 		}
 
