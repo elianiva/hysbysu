@@ -36,7 +36,9 @@ func (bot DiscordBot) Notify(subject model.Subject) error {
 			Title: "📚 Inpo baru gaes!!",
 			Author: &discordgo.MessageEmbedAuthor{
 				Name:    subject.Lecturer.Name,
-				IconURL: subject.Lecturer.ImageUrl,
+				IconURL: "https://twirpz.files.wordpress.com/2015/06/twitter-avi-gender-balanced-figure.png",
+				// TODO(elianiva): figure out why the image won't load on discord
+				// IconURL: subject.Lecturer.ImageUrl,
 			},
 			Color: 0x61afef,
 			// Description: "Ada tugas dari bu",
