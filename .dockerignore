@@ -1,5 +1,0 @@
-# flyctl launch added from .gitignore
-**/node_modules
-**/snapshots/*
-!**/snapshots/.gitkeep
-**/.env
