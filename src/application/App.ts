@@ -39,10 +39,12 @@ export class App {
 				this._logger.info("Scraping done!");
 				await new Promise((res) => setTimeout(() => res(undefined), IS_DEV ? 10 * 1000 : SCRAPE_INTERVAL));
 			} catch (err) {
-				// TODO(elianiva): implement a proper error logging
 				if (err instanceof Error) {
-					console.error(err.message);
+					this._logger.error(err.message);
+				} else {
+					this._logger.error("Unknown error.")
 				}
+				throw err
 			}
 		}
 	}
