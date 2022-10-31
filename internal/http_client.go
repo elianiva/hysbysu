@@ -7,6 +7,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -24,7 +25,10 @@ func NewClient(config Config) (*HttpClient, error) {
 		return nil, errors.Wrap(err, "failed to initialise http client")
 	}
 
-	client := &http.Client{Jar: cookieJar}
+	client := &http.Client{
+		Jar:     cookieJar,
+		Timeout: time.Minute,
+	}
 
 	return &HttpClient{client: client, config: config}, nil
 }
@@ -58,7 +62,7 @@ func (h *HttpClient) newRequest(method string, url string, data io.Reader) (*htt
 }
 
 func (h *HttpClient) get(url string, data io.Reader) (*http.Response, error) {
-	request, err := h.newRequest("GET", url, data)
+	request, err := h.newRequest(http.MethodGet, url, data)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +77,7 @@ func (h *HttpClient) get(url string, data io.Reader) (*http.Response, error) {
 
 func (h *HttpClient) postForm(url string, data url.Values) (*http.Response, error) {
 	encodedData := data.Encode()
-	request, err := h.newRequest("POST", url, strings.NewReader(encodedData))
+	request, err := h.newRequest(http.MethodPost, url, strings.NewReader(encodedData))
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +133,7 @@ func (h *HttpClient) FetchLmsContent(courseUrl string) (io.Reader, error) {
 	// we need to get the MoodleSession first and then enter the url using that cookie
 	// skip if we already have MoodleSession cookie
 	if !h.hasMoodleSession {
-		secondReq, _ := h.newRequest("GET", courseUrl, nil)
+		secondReq, _ := h.newRequest(http.MethodGet, courseUrl, nil)
 		secondReq.Header.Set("Sec-Fetch-Site", "same-site")
 		secondReq.Header.Set("Referer", h.config.SlcUrl)
 		moodleSessionResp, err := h.client.Do(secondReq)

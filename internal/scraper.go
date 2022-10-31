@@ -27,33 +27,74 @@ type Scraper struct {
 	client    *HttpClient
 	collector Collector
 	presenter Presenter
+	busy      bool
+	shutdown  chan bool
 }
+
+var ErrClosed = errors.New("scraper closed")
 
 func NewScraper(config Config, client *HttpClient, collector Collector, presenter Presenter) *Scraper {
-	return &Scraper{config, client, collector, presenter}
+	shutdown := make(chan bool, 1)
+	busy := false
+	return &Scraper{config, client, collector, presenter, busy, shutdown}
 }
 
-func (s *Scraper) Scrape(config Config, client *HttpClient, doneCh chan struct{}, errorCh chan error) {
+func (s *Scraper) RunScraper() {
+	for {
+		select {
+		case <-s.shutdown:
+			return
+		default:
+			log.Println("scraping...")
+			s.busy = true
+			err := s.scrape()
+			if err != nil {
+				if errors.Is(err, ErrClosed) {
+					break
+				}
+
+				log.Fatalf("failed to scrape. reason: %v", err)
+			}
+			log.Println("finished scraping...")
+			s.busy = false
+
+			log.Println("waiting interval...")
+
+			// TODO(elianiva): revisit this, is this correct?
+			for {
+				select {
+				case <-s.shutdown:
+					log.Println("shutting down...")
+					return
+				case <-time.After(s.config.ScrapeInterval):
+					continue
+				}
+			}
+		}
+	}
+}
+
+func (s *Scraper) scrape() error {
 	err := s.client.CollectCookies()
 	if err != nil {
-		errorCh <- errors.Wrap(err, "failed to collect cookies")
+		return errors.Wrap(err, "failed to collect cookies")
 	}
 
 	subjectContent, err := s.client.FetchSubjectsContent()
 	if err != nil {
-		errorCh <- errors.Wrap(err, "failed to fetch lhs list content")
+		return errors.Wrap(err, "failed to fetch lhs list content")
 	}
 
 	newSubjects, err := s.collector.CollectSubjects(subjectContent)
 	if err != nil {
-		errorCh <- errors.Wrap(err, "failed to collect lhs detail")
+		return errors.Wrap(err, "failed to collect lhs detail")
 	}
 
 	eg, _ := errgroup.WithContext(context.TODO())
 	for _, newSubject := range newSubjects {
 		newSubject := newSubject
 		eg.Go(func() error {
-			oldSubjectFile, err := os.Open(path.Join(config.CWD, "snapshots", newSubject.CourseId+".json"))
+			oldSubjectFile, err := os.Open(path.Join(s.config.CWD, "snapshots", newSubject.CourseId+".json"))
 			hasOldFile := !errors.Is(err, os.ErrNotExist)
 			if err != nil && !hasOldFile {
 				return errors.Wrap(err, "failed to open the file to decode")
@@ -70,7 +111,7 @@ func (s *Scraper) Scrape(config Config, client *HttpClient, doneCh chan struct{}
 			var meetingsDiff []model.Meeting
 			if len(oldSubject.Meetings) > 0 && hasOldFile {
 				// get the diff for meetings
-				meetingsDiff = s.GetMeetingsDiff(oldSubject, newSubject)
+				meetingsDiff = s.getMeetingsDiff(oldSubject, newSubject)
 				s.presenter.Notify(model.Subject{
 					Lecturer: newSubject.Lecturer,
 					CourseId: newSubject.CourseId,
@@ -81,7 +122,7 @@ func (s *Scraper) Scrape(config Config, client *HttpClient, doneCh chan struct{}
 			// save the snapshot for future diffing
 			log.Println("saving course id: " + newSubject.CourseId)
 
-			fileName := path.Join(config.CWD, "snapshots", newSubject.CourseId+".json")
+			fileName := path.Join(s.config.CWD, "snapshots", newSubject.CourseId+".json")
 			file, err := os.Create(fileName)
 			if err != nil {
 				return errors.Wrap(err, "failed to open the file to encode")
@@ -98,20 +139,33 @@ func (s *Scraper) Scrape(config Config, client *HttpClient, doneCh chan struct{}
 	}
 	err = eg.Wait()
 	if err != nil {
-		errorCh <- errors.Wrap(err, "failed to save the snapshots")
+		return errors.Wrap(err, "failed to save the snapshots")
 	}
 
 	log.Println("cleaning up cookies...")
 	s.client.ResetCookies()
 
-	log.Println("waiting interval...")
-	time.Sleep(s.config.ScrapeInterval)
-
-	errorCh <- nil
-	doneCh <- struct{}{}
+	return nil
 }
 
-func (s *Scraper) GetMeetingsDiff(oldSubject model.Subject, newSubject model.Subject) []model.Meeting {
+func (s *Scraper) Shutdown(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("timeout exceeded, forcing it to shutdown...")
+			return
+		default:
+			s.shutdown <- true
+			if !s.busy {
+				return
+			}
+			log.Println("scraper is busy, will try to wait...")
+			continue
+		}
+	}
+}
+
+func (s *Scraper) getMeetingsDiff(oldSubject model.Subject, newSubject model.Subject) []model.Meeting {
 	oldLen := len(oldSubject.Meetings)
 	newLen := len(newSubject.Meetings)
 	result := make([]model.Meeting, 0)
@@ -122,7 +176,7 @@ func (s *Scraper) GetMeetingsDiff(oldSubject model.Subject, newSubject model.Sub
 
 	for meetingIdx, meeting := range newSubject.Meetings[:oldLen] {
 		same := meeting.Compare(oldSubject.Meetings[meetingIdx])
-		lecturesDiff := s.GetLecturesDiff(oldSubject.Meetings[meetingIdx], meeting)
+		lecturesDiff := s.getLecturesDiff(oldSubject.Meetings[meetingIdx], meeting)
 		if same && len(lecturesDiff) < 1 {
 			continue
 		}
@@ -136,7 +190,7 @@ func (s *Scraper) GetMeetingsDiff(oldSubject model.Subject, newSubject model.Sub
 	return result
 }
 
-func (s *Scraper) GetLecturesDiff(oldMeeting model.Meeting, newMeeting model.Meeting) []model.Lecture {
+func (s *Scraper) getLecturesDiff(oldMeeting model.Meeting, newMeeting model.Meeting) []model.Lecture {
 	oldLen := len(oldMeeting.Lectures)
 	newLen := len(newMeeting.Lectures)
 	result := make([]model.Lecture, 0)

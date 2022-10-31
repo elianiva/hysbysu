@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/pkg/errors"
@@ -161,7 +162,10 @@ func (c GoQueryCollector) CollectSubjects(subjectContent io.Reader) ([]model.Sub
 
 	subjects := make([]model.Subject, 0)
 
-	eg, _ := errgroup.WithContext(context.TODO())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	eg, _ := errgroup.WithContext(ctx)
 	for _, link := range links {
 		courseUrl, err := url.Parse(link)
 		courseId := courseUrl.Query().Get("id")

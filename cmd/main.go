@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"hysbysu/internal"
 	"hysbysu/presentation"
 	"log"
+	"os"
+	"os/signal"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -27,17 +31,24 @@ func main() {
 
 	scraper := internal.NewScraper(config, client, collector, bot)
 
-	doneCh := make(chan struct{}, 1)
-	errorCh := make(chan error, 1)
+	exitSignal := make(chan os.Signal, 1)
+	signal.Notify(exitSignal, os.Interrupt)
 
-	for {
-		log.Println("scraping...")
-		go scraper.Scrape(config, client, doneCh, errorCh)
+	go func() {
+		defer func() {
+			err := recover()
+			if err != nil {
+				log.Printf("recovered: %v", err)
+			}
+		}()
+		scraper.RunScraper()
+	}()
 
-		if err := <-errorCh; err != nil {
-			log.Fatalf("failed to scrape. reason: %v", err)
-		}
+	<-exitSignal
 
-		<-doneCh
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	log.Println("shutting down...")
+	scraper.Shutdown(ctx)
 }
