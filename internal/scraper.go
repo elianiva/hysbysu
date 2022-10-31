@@ -61,14 +61,13 @@ func (s *Scraper) RunScraper() {
 			log.Println("waiting interval...")
 
 			// TODO(elianiva): revisit this, is this correct?
-			for {
-				select {
-				case <-s.shutdown:
-					log.Println("shutting down...")
-					return
-				case <-time.After(s.config.ScrapeInterval):
-					continue
-				}
+			select {
+			case <-s.shutdown:
+				log.Println("shutting down...")
+				return
+			case <-time.After(s.config.ScrapeInterval):
+				log.Println("continuing...")
+				continue
 			}
 		}
 	}
@@ -95,13 +94,15 @@ func (s *Scraper) scrape() error {
 		newSubject := newSubject
 		eg.Go(func() error {
 			oldSubjectFile, err := os.Open(path.Join(s.config.CWD, "snapshots", newSubject.CourseId+".json"))
-			hasOldFile := !errors.Is(err, os.ErrNotExist)
-			if err != nil && !hasOldFile {
-				return errors.Wrap(err, "failed to open the file to decode")
+			hasOldFile := os.IsExist(err)
+			if err != nil {
+				if hasOldFile {
+					return errors.Wrap(err, "failed to open the file to decode")
+				}
 			}
 
 			var oldSubject model.Subject
-			if err == nil {
+			if hasOldFile {
 				err = json.NewDecoder(oldSubjectFile).Decode(&oldSubject)
 				if err != nil {
 					return errors.Wrap(err, "failed to decode old subject data")
