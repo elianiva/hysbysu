@@ -18,4 +18,6 @@ RUN apk add --no-cache ca-certificates
 
 COPY --from=build /app/bin/hysbysu ./
 
+RUN mkdir /app/snapshots
+
 ENTRYPOINT [ "/app/hysbysu" ]
