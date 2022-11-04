@@ -93,16 +93,24 @@ func (s *Scraper) scrape() error {
 	for _, newSubject := range newSubjects {
 		newSubject := newSubject
 		eg.Go(func() error {
-			oldSubjectFile, err := os.Open(path.Join(s.config.CWD, "snapshots", newSubject.CourseId+".json"))
-			hasOldFile := os.IsExist(err)
-			if err != nil {
-				if hasOldFile {
-					return errors.Wrap(err, "failed to open the file to decode")
-				}
+			oldFilePath := path.Join(s.config.CWD, "snapshots", newSubject.CourseId+".json")
+			_, err := os.Stat(oldFilePath)
+
+			// TODO(elianiva): simplify, this code looks a bit sus
+			var hasOldFile bool
+			if err == nil || os.IsExist(err) {
+				hasOldFile = true
+			}
+			if err != nil && !os.IsNotExist(err) {
+				return errors.Wrap(err, "failed to check if file already exists or not")
 			}
 
 			var oldSubject model.Subject
 			if hasOldFile {
+				oldSubjectFile, err := os.Open(oldFilePath)
+				if err != nil {
+					return errors.Wrap(err, "failed to open the file to decode")
+				}
 				err = json.NewDecoder(oldSubjectFile).Decode(&oldSubject)
 				if err != nil {
 					return errors.Wrap(err, "failed to decode old subject data")
