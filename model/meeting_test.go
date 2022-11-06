@@ -50,7 +50,7 @@ func TestCompareMeetingWithDifferentLectures(t *testing.T) {
 		Lectures: []Lecture{},
 	}
 	same := meeting1.Compare(meeting2)
-	if same {
-		t.Fatalf("meeting1 and meeting2 should be different")
+	if !same {
+		t.Fatalf("meeting1 and meeting2 should be the same")
 	}
 }
