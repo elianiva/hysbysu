@@ -30,7 +30,7 @@ jobs:
           extra_args: --debug --only-verified
 
       - name: Build
-        run: go build .
+        run: go build cmd/main.go
 
       - name: Run test & coverage
         run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
