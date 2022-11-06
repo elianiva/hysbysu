@@ -51,6 +51,7 @@ const (
 	el_modtypeAssignment = "modtype_assign"
 	el_modtypeQuiz       = "modtype_quiz"
 	el_modtypeUrl        = "modtype_url"
+	el_modtypeForum      = "modtype_forum"
 	el_summaryImages     = ".summary img"
 	el_lecturerName      = ".summary td strong"
 )
@@ -105,6 +106,7 @@ func (c GoQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, b
 	isAssignment := strings.Contains(classAttrib, el_modtypeAssignment)
 	isQuiz := strings.Contains(classAttrib, el_modtypeQuiz)
 	isUrl := strings.Contains(classAttrib, el_modtypeUrl)
+	isForum := strings.Contains(classAttrib, el_modtypeForum)
 
 	var lectureType model.LectureType = model.LectureUnknown
 	switch true {
@@ -116,6 +118,8 @@ func (c GoQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, b
 		lectureType = model.LectureQuiz
 	case isUrl:
 		lectureType = model.LectureUrl
+	case isForum:
+		lectureType = model.LectureForum
 	}
 
 	lectureName := activityInstance.Find(el_instanceName).Text()
