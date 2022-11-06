@@ -95,6 +95,14 @@ func (bot DiscordBot) Notify(subject model.Subject) error {
 			})
 		}
 
+		uncategorised := bot.buildLectureList(meeting.Lectures, model.LectureUnknown)
+		if len(uncategorised) > 0 {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:  "Uncategorised",
+				Value: uncategorised,
+			})
+		}
+
 		log.Println("sending message to " + bot.config.DiscordChannelId)
 		_, err := bot.discord.ChannelMessageSendEmbed(bot.config.DiscordChannelId, embed)
 		if err != nil {
