@@ -79,6 +79,14 @@ func (bot DiscordBot) Notify(subject model.Subject) error {
 			})
 		}
 
+		forums := bot.buildLectureList(meeting.Lectures, model.LectureForum)
+		if len(forums) > 0 {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:  "Forums",
+				Value: forums,
+			})
+		}
+
 		externalResource := bot.buildLectureList(meeting.Lectures, model.LectureUrl)
 		if len(externalResource) > 0 {
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{

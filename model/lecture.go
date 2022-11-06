@@ -7,6 +7,7 @@ const (
 	LectureAssignment LectureType = "assignment"
 	LectureUrl        LectureType = "url"
 	LectureQuiz       LectureType = "quiz"
+	LectureForum      LectureType = "forum"
 	LectureUnknown    LectureType = "unknown"
 )
 
