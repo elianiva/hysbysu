@@ -65,46 +65,56 @@ func (c goQueryCollector) collectMeetings(html io.Reader) ([]model.Meeting, erro
 
 	meetings := make([]model.Meeting, 0)
 	subjectName := document.Find(el_subjectName).Text()
-	document.Find(el_topicItem).Slice(1, goquery.ToEnd).Each(func(_ int, s *goquery.Selection) {
-		meeting := c.extractMeeting(s)
+
+	// skip one because the first topicEl is just the detail of the course
+	topicEl := document.Find(el_topicItem).Slice(1, goquery.ToEnd)
+	for _, topicNode := range topicEl.Nodes {
+		selection := goquery.NewDocumentFromNode(topicNode).Selection
+		meeting, err := c.extractMeeting(selection)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to extract meeting detail")
+		}
 		meeting.Subject = subjectName
 		meetings = append(meetings, meeting)
-	})
+	}
 
 	return meetings, nil
 }
 
-func (c goQueryCollector) extractMeeting(s *goquery.Selection) model.Meeting {
+func (c goQueryCollector) extractMeeting(s *goquery.Selection) (meeting model.Meeting, err error) {
 	sectionTitle := s.Find(el_sectionTitle).Text()
 
 	lectures := make([]model.Lecture, 0)
-	s.Find(el_lectureList).Each(func(_ int, ss *goquery.Selection) {
-		lecture, isValid := c.extractLecture(ss)
-		if !isValid {
-			return
+	lectureEl := s.Find(el_lectureList)
+
+	for _, lectureNode := range lectureEl.Nodes {
+		selection := goquery.NewDocumentFromNode(lectureNode).Selection
+		lecture, err := c.extractLecture(selection)
+		if err != nil {
+			return model.Meeting{}, errors.Wrap(err, "failed to extract meeting")
 		}
 		lectures = append(lectures, lecture)
-	})
+	}
 
 	return model.Meeting{
 		Subject:  "", // will be filled later
 		Title:    sectionTitle,
 		Lectures: lectures,
-	}
+	}, nil
 }
 
-func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, bool) {
+func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, error) {
 	activityInstance := s.Find(el_activityInstance)
 
 	classAttrib, exists := s.Attr("class")
 	if !exists {
-		return model.Lecture{}, false
+		return model.Lecture{}, errors.New("failed to get activityinstance class property")
 	}
 
 	lectureName := activityInstance.Find(el_instanceName).Text()
 	lectureUrl, exists := activityInstance.Attr("href")
 	if !exists {
-		return model.Lecture{}, false
+		return model.Lecture{}, errors.New("failed to get lecture href property")
 	}
 
 	isResource := strings.Contains(classAttrib, el_modtypeResource)
@@ -122,11 +132,11 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, b
 		lectureType = model.LectureAssignment
 		html, err := c.client.Get(lectureUrl, nil)
 		if err != nil {
-			return model.Lecture{}, false
+			return model.Lecture{}, errors.Wrap(err, "failed to fetch lecture detail")
 		}
 		deadline, err = c.collectDeadlineInfo(html.Body)
 		if err != nil {
-			return model.Lecture{}, false
+			return model.Lecture{}, errors.Wrap(err, "failed to extract deadline information")
 		}
 	} else if isQuiz {
 		lectureType = model.LectureQuiz
@@ -141,7 +151,7 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, b
 		Url:      lectureUrl,
 		Type:     lectureType,
 		Deadline: deadline,
-	}, true
+	}, nil
 }
 
 func (c goQueryCollector) collectLecturerInfo(html io.Reader) (model.LecturerInfo, error) {

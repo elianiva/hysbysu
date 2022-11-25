@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 )
 
-type DiscordBot struct {
+type discordbot struct {
 	config  internal.Config
 	discord *discordgo.Session
 }
 
-func NewDiscordBot(config internal.Config) (*DiscordBot, error) {
+func NewDiscordBot(config internal.Config) (*discordbot, error) {
 	discord, err := discordgo.New("Bot " + config.DiscordToken)
 	if err != nil {
 		return nil, err
@@ -27,10 +28,10 @@ func NewDiscordBot(config internal.Config) (*DiscordBot, error) {
 		return nil, err
 	}
 
-	return &DiscordBot{config, discord}, nil
+	return &discordbot{config, discord}, nil
 }
 
-func (bot DiscordBot) Notify(subject model.Subject) error {
+func (bot discordbot) Notify(subject model.Subject) error {
 	for _, meeting := range subject.Meetings {
 		embed := &discordgo.MessageEmbed{
 			Title: "📚 Inpo baru gaes!!",
@@ -41,7 +42,6 @@ func (bot DiscordBot) Notify(subject model.Subject) error {
 				// IconURL: subject.Lecturer.ImageUrl,
 			},
 			Color: 0x61afef,
-			// Description: "Ada tugas dari bu",
 			Fields: []*discordgo.MessageEmbedField{
 				{Name: "Title", Value: meeting.Title},
 				{Name: "Subject", Value: meeting.Subject},
@@ -106,14 +106,14 @@ func (bot DiscordBot) Notify(subject model.Subject) error {
 		log.Println("sending message to " + bot.config.DiscordChannelId)
 		_, err := bot.discord.ChannelMessageSendEmbed(bot.config.DiscordChannelId, embed)
 		if err != nil {
-			log.Printf("failed to send message to discord. reason: %v", err)
+			return errors.Wrap(err, "failed to send message to discord")
 		}
 	}
 
 	return nil
 }
 
-func (bot DiscordBot) buildLectureList(lectures []model.Lecture, lectureType model.LectureType) string {
+func (bot discordbot) buildLectureList(lectures []model.Lecture, lectureType model.LectureType) string {
 	output := ""
 	for _, lecture := range lectures {
 		if lecture.Type == lectureType {
@@ -124,4 +124,23 @@ func (bot DiscordBot) buildLectureList(lectures []model.Lecture, lectureType mod
 		}
 	}
 	return output
+}
+
+func (bot discordbot) Error(errDetail error) error {
+	embed := &discordgo.MessageEmbed{
+		Title:       "❗ Ada yg error bang",
+		Color:       0xf54242,
+		Description: "```\n" + errDetail.Error() + "\n```",
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "tolong mention @elianiva kalo orangnya belom ngerespon",
+		},
+	}
+
+	_, err := bot.discord.ChannelMessageSendEmbed(bot.config.DiscordChannelId, embed)
+	if err != nil {
+		return errors.Wrap(err, "failed to log error message to discord")
+	}
+
+	return nil
 }

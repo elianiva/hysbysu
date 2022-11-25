@@ -20,6 +20,7 @@ type Collector interface {
 
 type Presenter interface {
 	Notify(subject model.Subject) error
+	Error(errorDetail error) error
 }
 
 type scraper struct {
@@ -52,8 +53,10 @@ func (s *scraper) RunScraper() {
 				if errors.Is(err, ErrClosed) {
 					break
 				}
-
-				log.Fatalf("failed to scrape. reason: %v", err)
+				err := s.presenter.Error(err)
+				if err != nil {
+					log.Print(err.Error())
+				}
 			}
 			log.Println("finished scraping...")
 			s.busy = false
@@ -111,6 +114,7 @@ func (s *scraper) scrape() error {
 				if err != nil {
 					return errors.Wrap(err, "failed to open the file to decode")
 				}
+
 				err = json.NewDecoder(oldSubjectFile).Decode(&oldSubject)
 				if err != nil {
 					return errors.Wrap(err, "failed to decode old subject data")
@@ -118,14 +122,17 @@ func (s *scraper) scrape() error {
 			}
 
 			var meetingsDiff []model.Meeting
-			if len(oldSubject.Meetings) > 0 && hasOldFile {
+			if len(oldSubject.Meetings) > 0 && len(newSubject.Meetings) > 0 && hasOldFile {
 				// get the diff for meetings
 				meetingsDiff = s.getMeetingsDiff(oldSubject, newSubject)
-				s.presenter.Notify(model.Subject{
+				err := s.presenter.Notify(model.Subject{
 					Lecturer: newSubject.Lecturer,
 					CourseId: newSubject.CourseId,
 					Meetings: meetingsDiff,
 				})
+				if err != nil {
+					log.Print(err.Error())
+				}
 			}
 
 			// save the snapshot for future diffing
