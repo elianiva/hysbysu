@@ -118,6 +118,9 @@ func (bot DiscordBot) buildLectureList(lectures []model.Lecture, lectureType mod
 	for _, lecture := range lectures {
 		if lecture.Type == lectureType {
 			output += "• [" + lecture.Name + "](" + lecture.Url + ")\n"
+			if lecture.Deadline != "" {
+				output += "⠀" + lecture.Deadline + "\n"
+			}
 		}
 	}
 	return output

@@ -12,9 +12,10 @@ const (
 )
 
 type Lecture struct {
-	Name string
-	Url  string
-	Type LectureType
+	Name     string
+	Url      string
+	Type     LectureType
+	Deadline string `json:"omitempty"`
 }
 
 // Compare will only compare primitive typed property

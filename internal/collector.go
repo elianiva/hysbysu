@@ -102,18 +102,33 @@ func (c GoQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, b
 		return model.Lecture{}, false
 	}
 
+	lectureName := activityInstance.Find(el_instanceName).Text()
+	lectureUrl, exists := activityInstance.Attr("href")
+	if !exists {
+		return model.Lecture{}, false
+	}
+
 	isResource := strings.Contains(classAttrib, el_modtypeResource)
 	isAssignment := strings.Contains(classAttrib, el_modtypeAssignment)
 	isQuiz := strings.Contains(classAttrib, el_modtypeQuiz)
 	isUrl := strings.Contains(classAttrib, el_modtypeUrl)
 	isForum := strings.Contains(classAttrib, el_modtypeForum)
 
+	var deadline string
 	var lectureType model.LectureType = model.LectureUnknown
 	switch true {
 	case isResource:
 		lectureType = model.LectureResource
 	case isAssignment:
 		lectureType = model.LectureAssignment
+		html, err := c.client.Get(lectureUrl, nil)
+		if err != nil {
+			return model.Lecture{}, false
+		}
+		deadline, err = c.collectDeadlineInfo(html.Body)
+		if err != nil {
+			return model.Lecture{}, false
+		}
 	case isQuiz:
 		lectureType = model.LectureQuiz
 	case isUrl:
@@ -122,16 +137,11 @@ func (c GoQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, b
 		lectureType = model.LectureForum
 	}
 
-	lectureName := activityInstance.Find(el_instanceName).Text()
-	lectureUrl, exists := activityInstance.Attr("href")
-	if !exists {
-		return model.Lecture{}, false
-	}
-
 	return model.Lecture{
-		Name: lectureName,
-		Url:  lectureUrl,
-		Type: lectureType,
+		Name:     lectureName,
+		Url:      lectureUrl,
+		Type:     lectureType,
+		Deadline: deadline,
 	}, true
 }
 
@@ -156,6 +166,16 @@ func (c GoQueryCollector) collectLecturerInfo(html io.Reader) (model.LecturerInf
 		Name:     lecturerName,
 		ImageUrl: lecturerImageUrl,
 	}, nil
+}
+
+func (c GoQueryCollector) collectDeadlineInfo(html io.Reader) (string, error) {
+	document, err := goquery.NewDocumentFromReader(html)
+	if err != nil {
+		return "", errors.Wrap(err, "cannot create lecture detail document")
+	}
+
+	deadlineText := goquery.NewDocumentFromNode(document.Find("tr").Nodes[2]).Find(".lastcol").Text()
+	return deadlineText, nil
 }
 
 func (c GoQueryCollector) CollectSubjects(subjectContent io.Reader) ([]model.Subject, error) {

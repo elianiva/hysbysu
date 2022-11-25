@@ -61,7 +61,7 @@ func (h *HttpClient) newRequest(method string, url string, data io.Reader) (*htt
 	return request, nil
 }
 
-func (h *HttpClient) get(url string, data io.Reader) (*http.Response, error) {
+func (h *HttpClient) Get(url string, data io.Reader) (*http.Response, error) {
 	request, err := h.newRequest(http.MethodGet, url, data)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (h *HttpClient) login() error {
 }
 
 func (h *HttpClient) FetchSubjectsContent() (io.Reader, error) {
-	response, err := h.get(h.config.SlcUrl+"/spada", nil)
+	response, err := h.Get(h.config.SlcUrl+"/spada", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (h *HttpClient) FetchLmsContent(courseUrl string) (io.Reader, error) {
 	// the first firstResponse, which has a url format of `slcUrl/spada/?gotourl=xxx` is used to get the cookie needed for the lms page itself
 	// the firstResponse is a <script>window.location="lmsUrl"</script>, which we do in the second request
 	// not sure why they use client side redirect instead of responding with 302 status code
-	firstResponse, err := h.get(h.config.SlcUrl+"/spada/?gotourl="+url.QueryEscape(courseUrl), nil)
+	firstResponse, err := h.Get(h.config.SlcUrl+"/spada/?gotourl="+url.QueryEscape(courseUrl), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (h *HttpClient) FetchLmsContent(courseUrl string) (io.Reader, error) {
 		}
 	}
 
-	secondResponse, err := h.get(courseUrl, nil)
+	secondResponse, err := h.Get(courseUrl, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (h *HttpClient) CollectCookies() error {
 }
 
 func (h *HttpClient) collectSiakadCookies() error {
-	response, err := h.get(h.config.SiakadUrl, nil)
+	response, err := h.Get(h.config.SiakadUrl, nil)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func (h *HttpClient) collectSiakadCookies() error {
 }
 
 func (h *HttpClient) collectHomepageCookies() error {
-	response, err := h.get(h.config.SiakadUrl+"/beranda", nil)
+	response, err := h.Get(h.config.SiakadUrl+"/beranda", nil)
 	if err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func (h *HttpClient) collectHomepageCookies() error {
 }
 
 func (h *HttpClient) collectSlcCookies() error {
-	response, err := h.get(h.config.SlcUrl, nil)
+	response, err := h.Get(h.config.SlcUrl, nil)
 	if err != nil {
 		return err
 	}
