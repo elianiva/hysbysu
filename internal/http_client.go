@@ -12,14 +12,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-type HttpClient struct {
+type httpClient struct {
 	client           *http.Client
 	config           Config
 	cookies          []*http.Cookie
 	hasMoodleSession bool
 }
 
-func NewClient(config Config) (*HttpClient, error) {
+func NewClient(config Config) (*httpClient, error) {
 	cookieJar, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialise http client")
@@ -30,10 +30,10 @@ func NewClient(config Config) (*HttpClient, error) {
 		Timeout: time.Minute,
 	}
 
-	return &HttpClient{client: client, config: config}, nil
+	return &httpClient{client: client, config: config}, nil
 }
 
-func (h *HttpClient) newRequest(method string, url string, data io.Reader) (*http.Request, error) {
+func (h *httpClient) newRequest(method string, url string, data io.Reader) (*http.Request, error) {
 	request, err := http.NewRequest(method, url, data)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create a new request")
@@ -61,7 +61,7 @@ func (h *HttpClient) newRequest(method string, url string, data io.Reader) (*htt
 	return request, nil
 }
 
-func (h *HttpClient) Get(url string, data io.Reader) (*http.Response, error) {
+func (h *httpClient) Get(url string, data io.Reader) (*http.Response, error) {
 	request, err := h.newRequest(http.MethodGet, url, data)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (h *HttpClient) Get(url string, data io.Reader) (*http.Response, error) {
 	return response, err
 }
 
-func (h *HttpClient) postForm(url string, data url.Values) (*http.Response, error) {
+func (h *httpClient) postForm(url string, data url.Values) (*http.Response, error) {
 	encodedData := data.Encode()
 	request, err := h.newRequest(http.MethodPost, url, strings.NewReader(encodedData))
 	if err != nil {
@@ -95,7 +95,7 @@ func (h *HttpClient) postForm(url string, data url.Values) (*http.Response, erro
 	return response, nil
 }
 
-func (h *HttpClient) login() error {
+func (h *httpClient) login() error {
 	credential := url.Values{
 		"username": []string{h.config.NIM},
 		"password": []string{h.config.Password},
@@ -110,7 +110,7 @@ func (h *HttpClient) login() error {
 	return nil
 }
 
-func (h *HttpClient) FetchSubjectsContent() (io.Reader, error) {
+func (h *httpClient) FetchSubjectsContent() (io.Reader, error) {
 	response, err := h.Get(h.config.SlcUrl+"/spada", nil)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (h *HttpClient) FetchSubjectsContent() (io.Reader, error) {
 	return response.Body, nil
 }
 
-func (h *HttpClient) FetchLmsContent(courseUrl string) (io.Reader, error) {
+func (h *httpClient) FetchLmsContent(courseUrl string) (io.Reader, error) {
 	// the first firstResponse, which has a url format of `slcUrl/spada/?gotourl=xxx` is used to get the cookie needed for the lms page itself
 	// the firstResponse is a <script>window.location="lmsUrl"</script>, which we do in the second request
 	// not sure why they use client side redirect instead of responding with 302 status code
@@ -159,7 +159,7 @@ func (h *HttpClient) FetchLmsContent(courseUrl string) (io.Reader, error) {
 	return secondResponse.Body, nil
 }
 
-func (h *HttpClient) CollectCookies() error {
+func (h *httpClient) CollectCookies() error {
 	log.Println("collecting cookies...")
 	if err := h.collectSiakadCookies(); err != nil {
 		return err
@@ -183,7 +183,7 @@ func (h *HttpClient) CollectCookies() error {
 	return nil
 }
 
-func (h *HttpClient) collectSiakadCookies() error {
+func (h *httpClient) collectSiakadCookies() error {
 	response, err := h.Get(h.config.SiakadUrl, nil)
 	if err != nil {
 		return err
@@ -193,7 +193,7 @@ func (h *HttpClient) collectSiakadCookies() error {
 	return nil
 }
 
-func (h *HttpClient) collectHomepageCookies() error {
+func (h *httpClient) collectHomepageCookies() error {
 	response, err := h.Get(h.config.SiakadUrl+"/beranda", nil)
 	if err != nil {
 		return err
@@ -203,7 +203,7 @@ func (h *HttpClient) collectHomepageCookies() error {
 	return nil
 }
 
-func (h *HttpClient) collectSlcCookies() error {
+func (h *httpClient) collectSlcCookies() error {
 	response, err := h.Get(h.config.SlcUrl, nil)
 	if err != nil {
 		return err
@@ -213,11 +213,11 @@ func (h *HttpClient) collectSlcCookies() error {
 	return nil
 }
 
-func (h *HttpClient) ResetCookies() {
+func (h *httpClient) ResetCookies() {
 	h.cookies = []*http.Cookie{}
 }
 
-func (h *HttpClient) updateOrInsertCookie(newCookies []*http.Cookie) {
+func (h *httpClient) updateOrInsertCookie(newCookies []*http.Cookie) {
 	for _, newCookie := range newCookies {
 		oldIndex := -1
 		for i, oldCookie := range h.cookies {

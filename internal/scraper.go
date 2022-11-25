@@ -22,9 +22,9 @@ type Presenter interface {
 	Notify(subject model.Subject) error
 }
 
-type Scraper struct {
+type scraper struct {
 	config    Config
-	client    *HttpClient
+	client    *httpClient
 	collector Collector
 	presenter Presenter
 	busy      bool
@@ -33,13 +33,13 @@ type Scraper struct {
 
 var ErrClosed = errors.New("scraper closed")
 
-func NewScraper(config Config, client *HttpClient, collector Collector, presenter Presenter) *Scraper {
+func NewScraper(config Config, client *httpClient, collector Collector, presenter Presenter) *scraper {
 	shutdown := make(chan bool, 1)
 	busy := false
-	return &Scraper{config, client, collector, presenter, busy, shutdown}
+	return &scraper{config, client, collector, presenter, busy, shutdown}
 }
 
-func (s *Scraper) RunScraper() {
+func (s *scraper) RunScraper() {
 	for {
 		select {
 		case <-s.shutdown:
@@ -73,7 +73,7 @@ func (s *Scraper) RunScraper() {
 	}
 }
 
-func (s *Scraper) scrape() error {
+func (s *scraper) scrape() error {
 	err := s.client.CollectCookies()
 	if err != nil {
 		return errors.Wrap(err, "failed to collect cookies")
@@ -157,7 +157,7 @@ func (s *Scraper) scrape() error {
 	return nil
 }
 
-func (s *Scraper) Shutdown(ctx context.Context) {
+func (s *scraper) Shutdown(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -174,7 +174,7 @@ func (s *Scraper) Shutdown(ctx context.Context) {
 	}
 }
 
-func (s *Scraper) getMeetingsDiff(oldSubject model.Subject, newSubject model.Subject) []model.Meeting {
+func (s *scraper) getMeetingsDiff(oldSubject model.Subject, newSubject model.Subject) []model.Meeting {
 	oldLen := len(oldSubject.Meetings)
 	newLen := len(newSubject.Meetings)
 	result := make([]model.Meeting, 0)
@@ -199,7 +199,7 @@ func (s *Scraper) getMeetingsDiff(oldSubject model.Subject, newSubject model.Sub
 	return result
 }
 
-func (s *Scraper) getLecturesDiff(oldMeeting model.Meeting, newMeeting model.Meeting) []model.Lecture {
+func (s *scraper) getLecturesDiff(oldMeeting model.Meeting, newMeeting model.Meeting) []model.Lecture {
 	oldLen := len(oldMeeting.Lectures)
 	newLen := len(newMeeting.Lectures)
 	result := make([]model.Lecture, 0)

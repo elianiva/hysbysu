@@ -15,16 +15,16 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type GoQueryCollector struct {
+type goQueryCollector struct {
 	config Config
-	client *HttpClient
+	client *httpClient
 }
 
-func NewCollector(config Config, client *HttpClient) *GoQueryCollector {
-	return &GoQueryCollector{config, client}
+func NewCollector(config Config, client *httpClient) *goQueryCollector {
+	return &goQueryCollector{config, client}
 }
 
-func (c GoQueryCollector) CollectSubjectLinks(html io.Reader) ([]string, error) {
+func (c goQueryCollector) CollectSubjectLinks(html io.Reader) ([]string, error) {
 	document, err := goquery.NewDocumentFromReader(html)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse slc document")
@@ -56,7 +56,7 @@ const (
 	el_lecturerName      = ".summary td strong"
 )
 
-func (c GoQueryCollector) collectMeetings(html io.Reader) ([]model.Meeting, error) {
+func (c goQueryCollector) collectMeetings(html io.Reader) ([]model.Meeting, error) {
 	document, err := goquery.NewDocumentFromReader(html)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to collect meetings")
@@ -74,7 +74,7 @@ func (c GoQueryCollector) collectMeetings(html io.Reader) ([]model.Meeting, erro
 	return meetings, nil
 }
 
-func (c GoQueryCollector) extractMeeting(s *goquery.Selection) model.Meeting {
+func (c goQueryCollector) extractMeeting(s *goquery.Selection) model.Meeting {
 	sectionTitle := s.Find(el_sectionTitle).Text()
 
 	lectures := make([]model.Lecture, 0)
@@ -94,7 +94,7 @@ func (c GoQueryCollector) extractMeeting(s *goquery.Selection) model.Meeting {
 	}
 }
 
-func (c GoQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, bool) {
+func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, bool) {
 	activityInstance := s.Find(el_activityInstance)
 
 	classAttrib, exists := s.Attr("class")
@@ -145,7 +145,7 @@ func (c GoQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, b
 	}, true
 }
 
-func (c GoQueryCollector) collectLecturerInfo(html io.Reader) (model.LecturerInfo, error) {
+func (c goQueryCollector) collectLecturerInfo(html io.Reader) (model.LecturerInfo, error) {
 	document, err := goquery.NewDocumentFromReader(html)
 	if err != nil {
 		return model.LecturerInfo{}, errors.Wrap(err, "failed to parse ")
@@ -168,7 +168,7 @@ func (c GoQueryCollector) collectLecturerInfo(html io.Reader) (model.LecturerInf
 	}, nil
 }
 
-func (c GoQueryCollector) collectDeadlineInfo(html io.Reader) (string, error) {
+func (c goQueryCollector) collectDeadlineInfo(html io.Reader) (string, error) {
 	document, err := goquery.NewDocumentFromReader(html)
 	if err != nil {
 		return "", errors.Wrap(err, "cannot create lecture detail document")
@@ -178,7 +178,7 @@ func (c GoQueryCollector) collectDeadlineInfo(html io.Reader) (string, error) {
 	return deadlineText, nil
 }
 
-func (c GoQueryCollector) CollectSubjects(subjectContent io.Reader) ([]model.Subject, error) {
+func (c goQueryCollector) CollectSubjects(subjectContent io.Reader) ([]model.Subject, error) {
 	links, err := c.CollectSubjectLinks(subjectContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to collect subject links")
