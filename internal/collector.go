@@ -15,6 +15,23 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const (
+	el_subjectCard       = ".gallery_grid_item.md-card-content > a"
+	el_subjectName       = ".page-header-headings"
+	el_topicItem         = ".topics > li .content"
+	el_sectionTitle      = ".sectionname"
+	el_lectureList       = "ul.section > li"
+	el_activityInstance  = ".activityinstance a"
+	el_instanceName      = ".instancename"
+	el_modtypeResource   = "modtype_resource"
+	el_modtypeAssignment = "modtype_assign"
+	el_modtypeQuiz       = "modtype_quiz"
+	el_modtypeUrl        = "modtype_url"
+	el_modtypeForum      = "modtype_forum"
+	el_summaryImages     = ".summary img"
+	el_lecturerName      = ".summary td strong"
+)
+
 type goQueryCollector struct {
 	config Config
 	client *httpClient
@@ -31,7 +48,7 @@ func (c goQueryCollector) CollectSubjectLinks(html io.Reader) ([]string, error) 
 	}
 
 	var urls []string
-	document.Find(".gallery_grid_item.md-card-content > a").Each(func(_ int, a *goquery.Selection) {
+	document.Find(el_subjectCard).Each(func(_ int, a *goquery.Selection) {
 		href, exists := a.Attr("href")
 		if exists {
 			urls = append(urls, href)
@@ -39,22 +56,6 @@ func (c goQueryCollector) CollectSubjectLinks(html io.Reader) ([]string, error) 
 	})
 	return urls, nil
 }
-
-const (
-	el_subjectName       = ".page-header-headings"
-	el_topicItem         = ".topics > li .content"
-	el_sectionTitle      = ".sectionname"
-	el_lectureList       = "ul.section > li"
-	el_activityInstance  = ".activityinstance a"
-	el_instanceName      = ".instancename"
-	el_modtypeResource   = "modtype_resource"
-	el_modtypeAssignment = "modtype_assign"
-	el_modtypeQuiz       = "modtype_quiz"
-	el_modtypeUrl        = "modtype_url"
-	el_modtypeForum      = "modtype_forum"
-	el_summaryImages     = ".summary img"
-	el_lecturerName      = ".summary td strong"
-)
 
 func (c goQueryCollector) collectMeetings(html io.Reader) ([]model.Meeting, error) {
 	document, err := goquery.NewDocumentFromReader(html)
@@ -67,7 +68,6 @@ func (c goQueryCollector) collectMeetings(html io.Reader) ([]model.Meeting, erro
 	document.Find(el_topicItem).Slice(1, goquery.ToEnd).Each(func(_ int, s *goquery.Selection) {
 		meeting := c.extractMeeting(s)
 		meeting.Subject = subjectName
-
 		meetings = append(meetings, meeting)
 	})
 
@@ -83,12 +83,11 @@ func (c goQueryCollector) extractMeeting(s *goquery.Selection) model.Meeting {
 		if !isValid {
 			return
 		}
-
 		lectures = append(lectures, lecture)
 	})
 
 	return model.Meeting{
-		Subject:  "",
+		Subject:  "", // will be filled later
 		Title:    sectionTitle,
 		Lectures: lectures,
 	}
@@ -116,10 +115,10 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, b
 
 	var deadline string
 	var lectureType model.LectureType = model.LectureUnknown
-	switch true {
-	case isResource:
+
+	if isResource {
 		lectureType = model.LectureResource
-	case isAssignment:
+	} else if isAssignment {
 		lectureType = model.LectureAssignment
 		html, err := c.client.Get(lectureUrl, nil)
 		if err != nil {
@@ -129,11 +128,11 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, b
 		if err != nil {
 			return model.Lecture{}, false
 		}
-	case isQuiz:
+	} else if isQuiz {
 		lectureType = model.LectureQuiz
-	case isUrl:
+	} else if isUrl {
 		lectureType = model.LectureUrl
-	case isForum:
+	} else if isForum {
 		lectureType = model.LectureForum
 	}
 
