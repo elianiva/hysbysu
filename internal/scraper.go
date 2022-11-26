@@ -126,13 +126,15 @@ func (s *scraper) scrape() error {
 			if len(oldSubject.Meetings) > 0 && len(newSubject.Meetings) > 0 && hasOldFile {
 				// get the diff for meetings
 				meetingsDiff = s.getMeetingsDiff(oldSubject, newSubject)
-				err := s.presenter.Notify(model.Subject{
-					Lecturer: newSubject.Lecturer,
-					CourseId: newSubject.CourseId,
-					Meetings: meetingsDiff,
-				})
-				if err != nil {
-					log.Print(err.Error())
+				if len(meetingsDiff) > 0 {
+					err := s.presenter.Notify(model.Subject{
+						Lecturer: newSubject.Lecturer,
+						CourseId: newSubject.CourseId,
+						Meetings: meetingsDiff,
+					})
+					if err != nil {
+						log.Print(err.Error())
+					}
 				}
 			}
 
