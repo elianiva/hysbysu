@@ -53,6 +53,7 @@ func (s *scraper) RunScraper() {
 				if errors.Is(err, ErrClosed) {
 					break
 				}
+				log.Println("There is an error, logging...")
 				err := s.presenter.Error(err)
 				if err != nil {
 					log.Print(err.Error())

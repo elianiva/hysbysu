@@ -37,6 +37,11 @@ type goQueryCollector struct {
 	client *httpClient
 }
 
+var (
+	MissingLectureHref  = errors.New("failed to get lecture href property")
+	MissingLectureClass = errors.New("failed to get activityinstance class property")
+)
+
 func NewCollector(config Config, client *httpClient) *goQueryCollector {
 	return &goQueryCollector{config, client}
 }
@@ -91,6 +96,11 @@ func (c goQueryCollector) extractMeeting(s *goquery.Selection) (meeting model.Me
 		selection := goquery.NewDocumentFromNode(lectureNode).Selection
 		lecture, err := c.extractLecture(selection)
 		if err != nil {
+			// these errors are not fatal, we'll just ignore them
+			if errors.Is(err, MissingLectureHref) || errors.Is(err, MissingLectureClass) {
+				continue
+			}
+
 			return model.Meeting{}, errors.Wrap(err, "failed to extract meeting")
 		}
 		lectures = append(lectures, lecture)
@@ -108,13 +118,13 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, e
 
 	classAttrib, exists := s.Attr("class")
 	if !exists {
-		return model.Lecture{}, errors.New("failed to get activityinstance class property")
+		return model.Lecture{}, MissingLectureClass
 	}
 
 	lectureName := activityInstance.Find(el_instanceName).Text()
 	lectureUrl, exists := activityInstance.Attr("href")
 	if !exists {
-		return model.Lecture{}, errors.New("failed to get lecture href property")
+		return model.Lecture{}, MissingLectureHref
 	}
 
 	isResource := strings.Contains(classAttrib, el_modtypeResource)
