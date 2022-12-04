@@ -1,4 +1,4 @@
-# fly.toml file generated for hysbysu on 2022-10-31T13:01:07+07:00
+# fly.toml file generated for hysbysu on 2022-11-29T20:36:08+07:00
 
 app = "hysbysu"
 kill_signal = "SIGINT"

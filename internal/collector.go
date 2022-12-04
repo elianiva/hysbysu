@@ -133,7 +133,7 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, e
 	isUrl := strings.Contains(classAttrib, el_modtypeUrl)
 	isForum := strings.Contains(classAttrib, el_modtypeForum)
 
-	var deadline string
+	var deadline int64
 	var lectureType model.LectureType = model.LectureUnknown
 
 	if isResource {
@@ -144,10 +144,15 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, e
 		if err != nil {
 			return model.Lecture{}, errors.Wrap(err, "failed to fetch lecture detail")
 		}
-		deadline, err = c.collectDeadlineInfo(html.Body)
+		rawDeadline, err := c.collectDeadlineInfo(html.Body)
 		if err != nil {
 			return model.Lecture{}, errors.Wrap(err, "failed to extract deadline information")
 		}
+		parsedDeadline, err := time.ParseInLocation("Monday, 2 January 2006, 15:04 PM", rawDeadline, c.config.TimeZone)
+		if err != nil {
+			return model.Lecture{}, errors.Wrap(err, "failed to parse deadline")
+		}
+		deadline = parsedDeadline.In(c.config.TimeZone).UnixMilli()
 	} else if isQuiz {
 		lectureType = model.LectureQuiz
 	} else if isUrl {
@@ -156,12 +161,13 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, e
 		lectureType = model.LectureForum
 	}
 
-	return model.Lecture{
+	lecture := model.Lecture{
 		Name:     lectureName,
 		Url:      lectureUrl,
 		Type:     lectureType,
 		Deadline: deadline,
-	}, nil
+	}
+	return lecture, nil
 }
 
 func (c goQueryCollector) collectLecturerInfo(html io.Reader) (model.LecturerInfo, error) {

@@ -17,6 +17,7 @@ type Config struct {
 	ScrapeInterval   time.Duration
 	DiscordToken     string
 	DiscordChannelId string
+	TimeZone         *time.Location
 }
 
 const (
@@ -88,6 +89,13 @@ func LoadConfig() (config Config, err error) {
 		return
 	}
 
+	location := "Asia/Jakarta"
+	timezone, err := time.LoadLocation(location)
+	if err != nil {
+		err = fmt.Errorf("failed to load timezone %s", location)
+		return
+	}
+
 	config = Config{
 		SiakadUrl:        siakadUrl,
 		SlcUrl:           slcUrl,
@@ -98,6 +106,7 @@ func LoadConfig() (config Config, err error) {
 		ScrapeInterval:   time.Duration(scrapeInterval) * time.Millisecond,
 		DiscordToken:     discordToken,
 		DiscordChannelId: discordChannelId,
+		TimeZone:         timezone,
 	}
 
 	return

@@ -61,6 +61,20 @@ func (h *httpClient) newRequest(method string, url string, data io.Reader) (*htt
 	return request, nil
 }
 
+func (h *httpClient) Head(url string) (*http.Response, error) {
+	request, err := h.newRequest(http.MethodHead, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := h.client.Do(request)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to perform a get request")
+	}
+
+	return response, err
+}
+
 func (h *httpClient) Get(url string, data io.Reader) (*http.Response, error) {
 	request, err := h.newRequest(http.MethodGet, url, data)
 	if err != nil {
@@ -184,7 +198,7 @@ func (h *httpClient) CollectCookies() error {
 }
 
 func (h *httpClient) collectSiakadCookies() error {
-	response, err := h.Get(h.config.SiakadUrl, nil)
+	response, err := h.Head(h.config.SiakadUrl)
 	if err != nil {
 		return err
 	}
@@ -194,7 +208,7 @@ func (h *httpClient) collectSiakadCookies() error {
 }
 
 func (h *httpClient) collectHomepageCookies() error {
-	response, err := h.Get(h.config.SiakadUrl+"/beranda", nil)
+	response, err := h.Head(h.config.SiakadUrl + "/beranda")
 	if err != nil {
 		return err
 	}
@@ -204,7 +218,7 @@ func (h *httpClient) collectHomepageCookies() error {
 }
 
 func (h *httpClient) collectSlcCookies() error {
-	response, err := h.Get(h.config.SlcUrl, nil)
+	response, err := h.Head(h.config.SlcUrl)
 	if err != nil {
 		return err
 	}

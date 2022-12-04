@@ -15,7 +15,7 @@ type Lecture struct {
 	Name     string
 	Url      string
 	Type     LectureType
-	Deadline string `json:"omitempty"`
+	Deadline int64
 }
 
 // Compare will only compare primitive typed property

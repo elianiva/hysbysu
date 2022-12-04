@@ -1,6 +1,7 @@
 package presentation
 
 import (
+	"fmt"
 	"hysbysu/internal"
 	"hysbysu/model"
 	"log"
@@ -34,7 +35,7 @@ func NewDiscordBot(config internal.Config) (*discordbot, error) {
 func (bot discordbot) Notify(subject model.Subject) error {
 	for _, meeting := range subject.Meetings {
 		embed := &discordgo.MessageEmbed{
-			Title: "📚 Inpo baru gaes!!",
+			Title: "📚 Inpo tugas!!",
 			Author: &discordgo.MessageEmbedAuthor{
 				Name:    subject.Lecturer.Name,
 				IconURL: "https://twirpz.files.wordpress.com/2015/06/twitter-avi-gender-balanced-figure.png",
@@ -117,9 +118,10 @@ func (bot discordbot) buildLectureList(lectures []model.Lecture, lectureType mod
 	output := ""
 	for _, lecture := range lectures {
 		if lecture.Type == lectureType {
-			output += "• [" + lecture.Name + "](" + lecture.Url + ")\n"
-			if lecture.Deadline != "" {
-				output += "⠀" + lecture.Deadline + "\n"
+			output += fmt.Sprintf("• [%s](%s)", lecture.Name, lecture.Url)
+			deadline := time.UnixMilli(lecture.Deadline)
+			if !deadline.IsZero() {
+				output += "⠀" + deadline.Format("Monday, 02 January 2006, 15:04 PM") + "\n"
 			}
 		}
 	}
@@ -143,4 +145,43 @@ func (bot discordbot) Error(errDetail error) error {
 	}
 
 	return nil
+}
+
+func (bot discordbot) Remind(reminders []model.ReminderItem) ([]model.ReminderItem, error) {
+	copiedReminders := make([]model.ReminderItem, 0)
+
+	for _, reminder := range reminders {
+		timeDiff := time.Duration(reminder.Deadline - time.Now().UnixMilli())
+		if timeDiff <= time.Hour*6 {
+			embed := &discordgo.MessageEmbed{
+				Title:       "🔔 Inpo deadline!!",
+				Description: "Ingfo tugas mepet, buruan kerjain kalo belom",
+				Color:       0xB5CEA8,
+				Fields: []*discordgo.MessageEmbedField{
+					{Name: "Subject", Value: reminder.SubjectName},
+					{Name: "Title", Value: fmt.Sprintf("[%s](%s)", reminder.Name, reminder.Url)},
+					{Name: "Deadline", Value: time.UnixMilli(reminder.Deadline).Format("Monday, 02 January 2006, 15:04 PM")},
+				},
+				Thumbnail: &discordgo.MessageEmbedThumbnail{
+					URL: "https://media.discordapp.net/attachments/1034341084735754260/1034370197429157888/unknown.png",
+				},
+				Timestamp: time.Now().Format(time.RFC3339),
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: "hayoloh, mampus kau kalo belom ngerjain, suruh siapa nunda nunda",
+				},
+			}
+
+			_, err := bot.discord.ChannelMessageSendEmbed(bot.config.DiscordChannelId, embed)
+			if err != nil {
+				return copiedReminders, errors.Wrap(err, "failed to log error message to discord")
+			}
+
+			if time.Now().UnixMilli() < reminder.Deadline {
+				reminder.HasBeenReminded = true
+				copiedReminders = append(copiedReminders, reminder)
+			}
+		}
+	}
+
+	return copiedReminders, nil
 }

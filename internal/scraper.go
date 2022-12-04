@@ -20,6 +20,7 @@ type Collector interface {
 
 type Presenter interface {
 	Notify(subject model.Subject) error
+	Remind(reminders []model.ReminderItem) ([]model.ReminderItem, error)
 	Error(errorDetail error) error
 }
 
@@ -93,12 +94,13 @@ func (s *scraper) scrape() error {
 		return errors.Wrap(err, "failed to collect lhs detail")
 	}
 
+	remindersChan := make(chan []model.ReminderItem, len(newSubjects))
 	eg, _ := errgroup.WithContext(context.TODO())
 	for _, newSubject := range newSubjects {
 		newSubject := newSubject
 		eg.Go(func() error {
-			oldFilePath := path.Join(s.config.CWD, "snapshots", newSubject.CourseId+".json")
-			_, err := os.Stat(oldFilePath)
+			oldSubjectFilePath := path.Join(s.config.CWD, "snapshots", newSubject.CourseId+".json")
+			_, err := os.Stat(oldSubjectFilePath)
 
 			// TODO(elianiva): simplify, this code looks a bit sus
 			var hasOldFile bool
@@ -111,10 +113,11 @@ func (s *scraper) scrape() error {
 
 			var oldSubject model.Subject
 			if hasOldFile {
-				oldSubjectFile, err := os.Open(oldFilePath)
+				oldSubjectFile, err := os.Open(oldSubjectFilePath)
 				if err != nil {
 					return errors.Wrap(err, "failed to open the file to decode")
 				}
+				defer oldSubjectFile.Close()
 
 				err = json.NewDecoder(oldSubjectFile).Decode(&oldSubject)
 				if err != nil {
@@ -138,6 +141,10 @@ func (s *scraper) scrape() error {
 				}
 			}
 
+			log.Println("Collecting reminder items for: " + newSubject.CourseId)
+			futureAssignments := s.getReminderItems(newSubject)
+			remindersChan <- futureAssignments
+
 			// save the snapshot for future diffing
 			log.Println("saving course id: " + newSubject.CourseId)
 
@@ -153,12 +160,66 @@ func (s *scraper) scrape() error {
 			}
 
 			log.Println("finished writing " + fileName)
+
 			return nil
 		})
 	}
+
 	err = eg.Wait()
 	if err != nil {
 		return errors.Wrap(err, "failed to save the snapshots")
+	}
+
+	reminderFilepath := path.Join(s.config.CWD, "snapshots", "reminder_queue.json")
+	reminderFile, err := os.Open(reminderFilepath)
+	if err != nil {
+		return errors.Wrap(err, "failed to open the file to decode")
+	}
+	defer reminderFile.Close()
+
+	var oldReminders []model.ReminderItem
+	err = json.NewDecoder(reminderFile).Decode(&oldReminders)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode reminders")
+	}
+
+	// used to store old reminders that hasn't been reminded yet and upcoming reminders
+	mergedReminders := make([]model.ReminderItem, 0)
+	for _, oldReminder := range oldReminders {
+		if !oldReminder.HasBeenReminded {
+			mergedReminders = append(mergedReminders, oldReminder)
+		}
+	}
+	for _, newReminder := range <-remindersChan {
+		isExist := false
+		for _, reminder := range mergedReminders {
+			if newReminder.Compare(reminder.Lecture) {
+				isExist = true
+				break
+			}
+		}
+		if !isExist {
+			mergedReminders = append(mergedReminders, newReminder)
+		}
+	}
+
+	// check for notification queue that we use to remind assignment deadline
+	reminders, err := s.presenter.Remind(mergedReminders)
+	if err != nil {
+		return errors.Wrap(err, "Failed to send reminders")
+	}
+
+	// saves the updated reminders
+	newReminderFilePath := path.Join(s.config.CWD, "snapshots", "reminder_queue.json")
+	newReminderFile, err := os.Create(newReminderFilePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to open the file to decode")
+	}
+	defer newReminderFile.Close()
+
+	err = json.NewEncoder(newReminderFile).Encode(reminders)
+	if err != nil {
+		return errors.Wrap(err, "failed to save updated reminders")
 	}
 
 	log.Println("cleaning up cookies...")
@@ -230,4 +291,21 @@ func (s *scraper) getLecturesDiff(oldMeeting model.Meeting, newMeeting model.Mee
 	}
 
 	return result
+}
+
+func (s *scraper) getReminderItems(subject model.Subject) []model.ReminderItem {
+	var assignments []model.ReminderItem
+	for _, meeting := range subject.Meetings {
+		for _, lecture := range meeting.Lectures {
+			hasPassed := time.Now().UnixMilli() > lecture.Deadline
+			if !hasPassed {
+				assignments = append(assignments, model.ReminderItem{
+					Lecture:         lecture,
+					SubjectName:     meeting.Subject,
+					HasBeenReminded: false,
+				})
+			}
+		}
+	}
+	return assignments
 }
