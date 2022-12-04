@@ -33,5 +33,6 @@ Godeps
 
 **/snapshots/*
 !**/snapshots/.gitkeep
+!**/snapshots/reminder_queue.json
 
 **/.env
