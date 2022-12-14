@@ -170,6 +170,7 @@ func (s *scraper) scrape() error {
 		return errors.Wrap(err, "failed to save the snapshots")
 	}
 
+	log.Println("Reading reminder queue...")
 	reminderFilepath := path.Join(s.config.CWD, "snapshots", "reminder_queue.json")
 	reminderFile, err := os.Open(reminderFilepath)
 	if err != nil {
@@ -210,6 +211,7 @@ func (s *scraper) scrape() error {
 	}
 
 	// saves the updated reminders
+	log.Println("Updating reminders...")
 	newReminderFilePath := path.Join(s.config.CWD, "snapshots", "reminder_queue.json")
 	newReminderFile, err := os.Create(newReminderFilePath)
 	if err != nil {

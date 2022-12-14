@@ -19,5 +19,6 @@ RUN apk add --no-cache ca-certificates tzdata
 COPY --from=build /app/bin/hysbysu ./
 
 RUN mkdir /app/snapshots
+RUN echo [] > /app/snapshots/reminder_queue.json
 
 ENTRYPOINT [ "/app/hysbysu" ]
