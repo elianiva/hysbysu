@@ -140,19 +140,11 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, e
 		lectureType = model.LectureResource
 	} else if isAssignment {
 		lectureType = model.LectureAssignment
-		html, err := c.client.Get(lectureUrl, nil)
+		parsedDeadline, err := c.getAssignmentDeadline(lectureUrl)
 		if err != nil {
-			return model.Lecture{}, errors.Wrap(err, "failed to fetch lecture detail")
+			return model.Lecture{}, err
 		}
-		rawDeadline, err := c.collectDeadlineInfo(html.Body)
-		if err != nil {
-			return model.Lecture{}, errors.Wrap(err, "failed to extract deadline information")
-		}
-		parsedDeadline, err := time.ParseInLocation("Monday, 2 January 2006, 15:04 PM", rawDeadline, c.config.TimeZone)
-		if err != nil {
-			return model.Lecture{}, errors.Wrap(err, "failed to parse deadline")
-		}
-		deadline = parsedDeadline.In(c.config.TimeZone).UnixMilli()
+		deadline = parsedDeadline
 	} else if isQuiz {
 		lectureType = model.LectureQuiz
 	} else if isUrl {
@@ -168,6 +160,22 @@ func (c goQueryCollector) extractLecture(s *goquery.Selection) (model.Lecture, e
 		Deadline: deadline,
 	}
 	return lecture, nil
+}
+
+func (c goQueryCollector) getAssignmentDeadline(lectureUrl string) (int64, error) {
+	html, err := c.client.Get(lectureUrl, nil)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to fetch lecture detail")
+	}
+	rawDeadline, err := c.collectDeadlineInfo(html.Body)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to extract deadline information")
+	}
+	parsedDeadline, err := time.ParseInLocation("Monday, 2 January 2006, 15:04 PM", rawDeadline, c.config.TimeZone)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to parse deadline")
+	}
+	return parsedDeadline.In(c.config.TimeZone).UnixMilli(), nil
 }
 
 func (c goQueryCollector) collectLecturerInfo(html io.Reader) (model.LecturerInfo, error) {
