@@ -120,7 +120,7 @@ func (bot discordbot) buildLectureList(lectures []model.Lecture, lectureType mod
 		if lecture.Type == lectureType {
 			output += fmt.Sprintf("• [%s](%s)", lecture.Name, lecture.Url)
 			deadline := time.UnixMilli(lecture.Deadline)
-			if !deadline.IsZero() {
+			if !deadline.In(bot.config.TimeZone).IsZero() {
 				output += "⠀" + deadline.Format("Monday, 02 January 2006, 15:04 PM") + "\n"
 			}
 		}
