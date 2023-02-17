@@ -16,6 +16,8 @@ type discordbot struct {
 	discord *discordgo.Session
 }
 
+var hasError = false
+
 func NewDiscordBot(config internal.Config) (*discordbot, error) {
 	discord, err := discordgo.New("Bot " + config.DiscordToken)
 	if err != nil {
@@ -33,6 +35,9 @@ func NewDiscordBot(config internal.Config) (*discordbot, error) {
 }
 
 func (bot discordbot) Notify(subject model.Subject) error {
+	// the server is OK, so we reset the error status
+	hasError = false
+
 	for _, meeting := range subject.Meetings {
 		embed := &discordgo.MessageEmbed{
 			Title: "📚 Inpo tugas!!",
@@ -129,6 +134,13 @@ func (bot discordbot) buildLectureList(lectures []model.Lecture, lectureType mod
 }
 
 func (bot discordbot) Error(errDetail error) error {
+	if hasError {
+		return nil
+	}
+
+	// mark if it has error so it doesn't repeatedly send the same error message
+	hasError = true
+
 	embed := &discordgo.MessageEmbed{
 		Title:       "❗ Ada yg error bang",
 		Color:       0xf54242,
