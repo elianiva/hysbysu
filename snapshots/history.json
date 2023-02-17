@@ -1,0 +1,33 @@
+[
+    {
+        "DurationMilliseconds": 200,
+        "Success": true,
+        "NewLectures": [],
+        "TimeStamp": 1257895000000
+    },
+    {
+        "DurationMilliseconds": 100,
+        "Success": true,
+        "NewLectures": [
+            {
+                "Name": "UJIAN PASCA PEMBELAJARAN Quiz",
+                "Url": "https://lmsslc.polinema.ac.id/mod/quiz/view.php?id=100596",
+                "Type": "quiz",
+                "Deadline": 0
+            }
+        ],
+        "TimeStamp": 1257896000000
+    },
+    {
+        "DurationMilliseconds": 300,
+        "Success": false,
+        "NewLectures": [],
+        "TimeStamp": 1257897000000
+    },
+    {
+        "DurationMilliseconds": 230,
+        "Success": true,
+        "NewLectures": [],
+        "TimeStamp": 1257898000000
+    }
+]

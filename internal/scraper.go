@@ -156,7 +156,7 @@ func (s *scraper) scrape() error {
 
 			err = json.NewEncoder(file).Encode(newSubject)
 			if err != nil {
-				return errors.Wrap(err, "failed to save the snapshot")
+				return errors.Wrap(err, "failed to update the snapshots")
 			}
 
 			log.Println("finished writing " + fileName)

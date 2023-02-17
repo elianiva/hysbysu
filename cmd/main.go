@@ -31,6 +31,11 @@ func main() {
 
 	scraper := internal.NewScraper(config, client, collector, bot)
 
+	server, err := presentation.NewServer(config)
+	if err != nil {
+		log.Fatalf("failed to initialise a new web server. reason: %v", err)
+	}
+
 	exitSignal := make(chan os.Signal, 1)
 	signal.Notify(exitSignal, os.Interrupt)
 
@@ -44,6 +49,13 @@ func main() {
 		scraper.RunScraper()
 	}()
 
+	go func() {
+		log.Println("starting http server...")
+		if err := server.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	<-exitSignal
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -51,4 +63,5 @@ func main() {
 
 	log.Println("shutting down...")
 	scraper.Shutdown(ctx)
+	server.Shutdown(ctx)
 }

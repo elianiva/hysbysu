@@ -33,5 +33,6 @@ go.work
 snapshots/*
 !snapshots/.gitkeep
 !snapshots/reminder_queue.json
+!snapshots/history.json
 
 .env

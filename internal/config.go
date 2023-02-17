@@ -18,6 +18,7 @@ type Config struct {
 	DiscordToken     string
 	DiscordChannelId string
 	TimeZone         *time.Location
+	ServerPort       string
 }
 
 const (
@@ -29,6 +30,7 @@ const (
 	SCRAPE_INTERVAL    = "SCRAPE_INTERVAL"
 	DISCORD_TOKEN      = "DISCORD_TOKEN"
 	DISCORD_CHANNEL_ID = "DISCORD_CHANNEL_ID"
+	SERVER_PORT        = "SERVER_PORT"
 )
 
 func LoadConfig() (config Config, err error) {
@@ -96,6 +98,11 @@ func LoadConfig() (config Config, err error) {
 		return
 	}
 
+	serverPort := os.Getenv(SERVER_PORT)
+	if serverPort == "" {
+		serverPort = "3000"
+	}
+
 	config = Config{
 		SiakadUrl:        siakadUrl,
 		SlcUrl:           slcUrl,
@@ -107,6 +114,7 @@ func LoadConfig() (config Config, err error) {
 		DiscordToken:     discordToken,
 		DiscordChannelId: discordChannelId,
 		TimeZone:         timezone,
+		ServerPort:       serverPort,
 	}
 
 	return
