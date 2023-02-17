@@ -19,6 +19,7 @@ type Collector interface {
 }
 
 type Presenter interface {
+	Started() error
 	Notify(subject model.Subject) error
 	Remind(reminders []model.ReminderItem) ([]model.ReminderItem, error)
 	Error(errorDetail error) error
@@ -42,6 +43,7 @@ func NewScraper(config Config, client *httpClient, collector Collector, presente
 }
 
 func (s *scraper) RunScraper() {
+	s.presenter.Started()
 	for {
 		select {
 		case <-s.shutdown:

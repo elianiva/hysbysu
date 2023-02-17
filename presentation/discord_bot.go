@@ -197,3 +197,8 @@ func (bot discordbot) Remind(reminders []model.ReminderItem) ([]model.ReminderIt
 
 	return copiedReminders, nil
 }
+
+func (bot discordbot) Started() error {
+	_, err := bot.discord.ChannelMessageSend(bot.config.DiscordChannelId, "I'm Alive!")
+	return err
+}
