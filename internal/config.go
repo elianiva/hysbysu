@@ -100,7 +100,7 @@ func LoadConfig() (config Config, err error) {
 
 	serverPort := os.Getenv(SERVER_PORT)
 	if serverPort == "" {
-		serverPort = "3000"
+		serverPort = "4000"
 	}
 
 	config = Config{

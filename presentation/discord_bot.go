@@ -163,8 +163,12 @@ func (bot discordbot) Remind(reminders []model.ReminderItem) ([]model.ReminderIt
 	copiedReminders := make([]model.ReminderItem, 0)
 
 	for _, reminder := range reminders {
+		if reminder.HasBeenReminded {
+			continue
+		}
+
 		timeDiff := time.Duration(reminder.Deadline - time.Now().UnixMilli())
-		if timeDiff <= time.Hour*6 {
+		if timeDiff <= (time.Hour*6)/time.Millisecond {
 			embed := &discordgo.MessageEmbed{
 				Title:       "🔔 Inpo deadline!!",
 				Description: "Ingfo tugas mepet, buruan kerjain kalo belom",
@@ -199,6 +203,6 @@ func (bot discordbot) Remind(reminders []model.ReminderItem) ([]model.ReminderIt
 }
 
 func (bot discordbot) Started() error {
-	_, err := bot.discord.ChannelMessageSend(bot.config.DiscordChannelId, "I'm Alive!")
+	_, err := bot.discord.ChannelMessageSend(bot.config.DiscordChannelId, "I'm alive!")
 	return err
 }

@@ -145,7 +145,9 @@ func (s *scraper) scrape() error {
 
 			log.Println("Collecting reminder items for: " + newSubject.CourseId)
 			futureAssignments := s.getReminderItems(newSubject)
-			remindersChan <- futureAssignments
+			if len(futureAssignments) > 0 {
+				remindersChan <- futureAssignments
+			}
 
 			// save the snapshot for future diffing
 			log.Println("saving course id: " + newSubject.CourseId)
@@ -189,7 +191,7 @@ func (s *scraper) scrape() error {
 	// used to store old reminders that hasn't been reminded yet and upcoming reminders
 	mergedReminders := make([]model.ReminderItem, 0)
 	for _, oldReminder := range oldReminders {
-		if !oldReminder.HasBeenReminded {
+		if time.Now().UnixMilli() < oldReminder.Deadline {
 			mergedReminders = append(mergedReminders, oldReminder)
 		}
 	}
