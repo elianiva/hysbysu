@@ -208,25 +208,25 @@ func (s *scraper) scrape() error {
 		}
 	}
 
-	// check for notification queue that we use to remind assignment deadline
-	reminders, err := s.presenter.Remind(mergedReminders)
-	if err != nil {
-		return errors.Wrap(err, "Failed to send reminders")
-	}
+	// // check for notification queue that we use to remind assignment deadline
+	// reminders, err := s.presenter.Remind(mergedReminders)
+	// if err != nil {
+	// 	return errors.Wrap(err, "Failed to send reminders")
+	// }
 
-	// saves the updated reminders
-	log.Println("Updating reminders...")
-	newReminderFilePath := path.Join(s.config.CWD, "snapshots", "reminder_queue.json")
-	newReminderFile, err := os.Create(newReminderFilePath)
-	if err != nil {
-		return errors.Wrap(err, "failed to open the file to decode")
-	}
-	defer newReminderFile.Close()
+	// // saves the updated reminders
+	// log.Println("Updating reminders...")
+	// newReminderFilePath := path.Join(s.config.CWD, "snapshots", "reminder_queue.json")
+	// newReminderFile, err := os.Create(newReminderFilePath)
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to open the file to decode")
+	// }
+	// defer newReminderFile.Close()
 
-	err = json.NewEncoder(newReminderFile).Encode(reminders)
-	if err != nil {
-		return errors.Wrap(err, "failed to save updated reminders")
-	}
+	// err = json.NewEncoder(newReminderFile).Encode(reminders)
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to save updated reminders")
+	// }
 
 	log.Println("cleaning up cookies...")
 	s.client.ResetCookies()
