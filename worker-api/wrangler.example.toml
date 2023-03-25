@@ -10,3 +10,8 @@ SLC_URL = ""
 LMS_URL = ""
 NIM = ""
 PASSWORD = ""
+
+[[kv_namespaces]]
+binding = "HYSBYSU_STORAGE"
+id = ""
+preview_id = ""

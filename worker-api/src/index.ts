@@ -46,7 +46,7 @@ export default {
 		return deps.worker.handle();
 	},
 	fetch: (request: Request, env: Env, ctx: ExecutionContext) => {
-		deps.router ??= new Router(rxSubject);
+		deps.router ??= new Router(rxSubject, env);
 		return deps.router.handle(request, env, ctx);
 	},
 };
