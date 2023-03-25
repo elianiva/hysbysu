@@ -1,0 +1,25 @@
+{
+  "name": "worker-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:local": "wrangler dev --local ./src/index.ts",
+    "dev": "wrangler dev ./src/index.ts",
+	"dev:cron": "wrangler dev --test-scheduled ./src/index.ts",
+    "trigger": "curl 'http://localhost:8787/cdn-cgi/mf/scheduled'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20230321.0",
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+    "cheerio": "1.0.0-rc.12",
+    "hono": "^3.1.2",
+    "ofetch": "^1.0.1",
+    "rxjs": "^7.8.0"
+  }
+}
