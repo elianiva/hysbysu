@@ -26,8 +26,13 @@ export class Router {
 	private _bindApiRoutes() {
 		const apiRoutes = new Hono();
 		apiRoutes.get("/subjects", async (c) => {
-			const subjectsString = (await this.#env.HYSBYSU_STORAGE.get("subjects")) ?? "[]";
-			return c.json({ subjects: JSON.parse(subjectsString) });
+			const { keys } = await this.#env.HYSBYSU_STORAGE.list({ prefix: "subject_" });
+			const subjects = await Promise.all(keys.map((key) => this.#env.HYSBYSU_STORAGE.get(key.name)));
+			return c.json({
+				subjects: subjects
+					.filter((subject): subject is string => subject !== null)
+					.map((subject) => JSON.parse(subject)),
+			});
 		});
 		apiRoutes.get("/_healthz", (c) => c.json({ message: "OK!" }));
 		this.#app.route("/api", apiRoutes);

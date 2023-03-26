@@ -6,7 +6,7 @@
   "scripts": {
     "dev:local": "wrangler dev --local ./src/index.ts",
     "dev": "wrangler dev ./src/index.ts",
-	"dev:cron": "wrangler dev --test-scheduled ./src/index.ts",
+    "dev:cron": "wrangler dev --test-scheduled ./src/index.ts",
     "trigger": "curl 'http://localhost:8787/cdn-cgi/mf/scheduled'"
   },
   "keywords": [],
