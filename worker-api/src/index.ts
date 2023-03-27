@@ -45,8 +45,7 @@ export default {
 	scheduled: (controller: ScheduledController, env: Env) => {
 		deps.httpClient ??= new HttpClient(env, logger, cookieJar);
 		deps.collector ??= new Collector(deps.httpClient, logger);
-		deps.presenter ??= new DiscordPresenter(logger, env);
-		deps.worker ??= new Worker(deps.httpClient, env, deps.collector, deps.presenter);
+		deps.worker ??= new Worker(deps.httpClient, env, deps.collector);
 		return deps.worker.handle();
 	},
 	fetch: (request: Request, env: Env, ctx: ExecutionContext) => {

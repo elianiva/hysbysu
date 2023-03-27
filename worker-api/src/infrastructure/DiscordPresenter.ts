@@ -4,8 +4,6 @@ import {
 	EmbedBuilder,
 	Events,
 	GatewayIntentBits,
-	Interaction,
-	SlashCommandBuilder,
 	TextChannel,
 } from "discord.js";
 import { ILogger } from "~/application/interfaces/ILogger";
@@ -13,6 +11,7 @@ import { Env } from "~/types/env";
 import { Subject } from "~/business/Subject";
 import { Lecture, LECTURE_TYPE, LectureType } from "~/business/Lecture";
 
+// TODO(elianiva): use this for later, doesn't work in cloudflare workers
 export class DiscordPresenter implements IPresenter {
 	#env: Env;
 	#client: Client;

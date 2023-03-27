@@ -1,7 +1,6 @@
 import { Env } from "~/types/env";
 import { HttpClient } from "./HttpClient";
 import { ICollector } from "./interfaces/ICollector";
-import { IPresenter } from "./interfaces/IPresenter";
 import { Subject } from "~/business/Subject";
 import { Meeting } from "~/business/Meeting";
 import { Lecture } from "~/business/Lecture";
@@ -10,13 +9,11 @@ export class Worker {
 	#httpClient: HttpClient;
 	#collector: ICollector;
 	#env: Env;
-	#presenter: IPresenter;
 
-	constructor(httpClient: HttpClient, env: Env, collector: ICollector, presenter: IPresenter) {
+	constructor(httpClient: HttpClient, env: Env, collector: ICollector) {
 		this.#httpClient = httpClient;
 		this.#env = env;
 		this.#collector = collector;
-		this.#presenter = presenter;
 	}
 
 	#getMeetingsDiff(oldSubject: Subject, newSubject: Subject): Meeting[] {
@@ -74,7 +71,8 @@ export class Worker {
 			if (subject.meetings.length > 0 && oldSubject !== null && oldSubject.meetings.length > 0) {
 				const meetingsDiff = this.#getMeetingsDiff(oldSubject, subject);
 				if (meetingsDiff.length > 0) {
-					this.#presenter.notify(meetingsDiff);
+					console.log({ meetingsDiff });
+					// this.#presenter.notify(meetingsDiff);
 				}
 			}
 
@@ -84,7 +82,7 @@ export class Worker {
 			await Promise.all(diffingTasks);
 		} catch (err: unknown) {
 			if (err instanceof Error) {
-				this.#presenter.error(err.message);
+				console.log(err);
 			}
 		}
 	}
