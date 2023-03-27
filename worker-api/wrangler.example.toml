@@ -1,4 +1,5 @@
 name = "worker-api"
+main = "src/index.ts"
 compatibility_date = "2023-03-25"
 
 [triggers]
@@ -15,3 +16,6 @@ PASSWORD = ""
 binding = "HYSBYSU_STORAGE"
 id = ""
 preview_id = ""
+
+[build]
+command = "node build.js"
