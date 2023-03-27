@@ -1,13 +1,15 @@
 import { Hono } from "hono";
-import { Subject } from "rxjs";
+import { cors } from "hono/cors";
+import { Subject as RxSubject } from "rxjs";
+import { Subject } from "~/business/Subject";
 import { Env } from "~/types/env";
 
 export class Router {
 	#env: Env;
 	#app: Hono;
-	#rxSubject: Subject<string>;
+	#rxSubject: RxSubject<string>;
 
-	constructor(rxSubject: Subject<string>, env: Env) {
+	constructor(rxSubject: RxSubject<string>, env: Env) {
 		this.#app = new Hono();
 		this.#rxSubject = rxSubject;
 		this.#env = env;
@@ -25,16 +27,18 @@ export class Router {
 
 	private _bindApiRoutes() {
 		const apiRoutes = new Hono();
+		apiRoutes.use("*", cors());
 		apiRoutes.get("/subjects", async (c) => {
 			const { keys } = await this.#env.HYSBYSU_STORAGE.list({ prefix: "subject_" });
 			const subjects = await Promise.all(keys.map((key) => this.#env.HYSBYSU_STORAGE.get(key.name)));
 			return c.json({
 				subjects: subjects
 					.filter((subject): subject is string => subject !== null)
-					.map((subject) => JSON.parse(subject)),
+					.map((subject) => JSON.parse(subject) as Subject[]),
 			});
 		});
 		apiRoutes.get("/_healthz", (c) => c.json({ message: "OK!" }));
+
 		this.#app.route("/api", apiRoutes);
 	}
 

@@ -36,11 +36,11 @@ rxSubject.subscribe(() => {
 });
 
 export default {
-	scheduled: (controller: ScheduledController, env: Env, ctx: ExecutionContext) => {
+	scheduled: (controller: ScheduledController, env: Env) => {
 		deps.logger ??= new ConsoleLogger();
 		deps.cookieJar ??= new CookieJar();
 		deps.httpClient ??= new HttpClient(env, deps.logger, deps.cookieJar);
-		deps.collector ??= new Collector(deps.httpClient);
+		deps.collector ??= new Collector(deps.httpClient, deps.logger);
 		deps.worker ??= new Worker(deps.httpClient, env, deps.collector);
 
 		return deps.worker.handle();

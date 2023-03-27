@@ -2,7 +2,6 @@ import { Env } from "~/types/env";
 import { HttpClient } from "./HttpClient";
 import { ICollector } from "./interfaces/ICollector";
 import { Subject } from "~/business/Subject";
-import { Lecturer } from "~/business/Lecturer";
 import { Meeting } from "~/business/Meeting";
 import { Lecture } from "~/business/Lecture";
 
@@ -76,7 +75,7 @@ export class Worker {
 				}
 			}
 
-			await this._env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subjects));
+			await this._env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
 		});
 		await Promise.all(diffingTasks);
 	}

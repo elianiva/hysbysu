@@ -1,10 +1,11 @@
 import * as cheerio from "cheerio";
 import { HttpClient } from "~/application/HttpClient";
 import { ICollector } from "~/application/interfaces/ICollector";
-import { LECTURE_TYPE, Lecture, LectureType } from "~/business/Lecture";
+import { Lecture, LECTURE_TYPE, LectureType } from "~/business/Lecture";
 import { Lecturer } from "~/business/Lecturer";
 import { Meeting } from "~/business/Meeting";
 import { Subject } from "~/business/Subject";
+import { ILogger } from "~/application/interfaces/ILogger";
 
 const SELECTOR = {
 	subjectCard: ".gallery_grid_item.md-card-content > a",
@@ -19,15 +20,18 @@ const SELECTOR = {
 	modtypeQuiz: "modtype_quiz",
 	modtypeUrl: "modtype_url",
 	modtypeForum: "modtype_forum",
+	modtypePage: "modtype_page",
 	summaryImages: ".summary img",
 	lecturerName: ".summary td strong",
 } as const;
 
 export class Collector implements ICollector {
 	#httpClient: HttpClient;
+	#logger: ILogger;
 
-	constructor(httpClient: HttpClient) {
+	constructor(httpClient: HttpClient, logger: ILogger) {
 		this.#httpClient = httpClient;
+		this.#logger = logger;
 	}
 
 	#extractLecture(node: cheerio.Cheerio<cheerio.Element>): Lecture | undefined {
@@ -56,6 +60,9 @@ export class Collector implements ICollector {
 				break;
 			case classAttribute.includes(SELECTOR.modtypeForum):
 				lectureType = LECTURE_TYPE.forum;
+				break;
+			case classAttribute.includes(SELECTOR.modtypePage):
+				lectureType = LECTURE_TYPE.page;
 				break;
 		}
 
@@ -96,28 +103,28 @@ export class Collector implements ICollector {
 		return new Lecturer(name, imageUrl);
 	}
 
-	#collectMeetings(rawMeetings: string): Meeting[] {
+	#collectMeetings(rawMeetings: string): { subjectName: string; meetings: Meeting[] } {
 		const $ = cheerio.load(rawMeetings);
 		const subjectName = $(SELECTOR.subjectName).text();
 		// skip one because the first topicEl is just the detail of the course
-		return $(SELECTOR.topicItem)
-			.slice(1)
-			.map((_, el) => {
-				const node = $(el);
-				const meeting = this.#extractMeeting(node);
-				meeting.subject = subjectName;
-				return new Meeting(meeting.subject, meeting.title, meeting.lectures);
-			})
-			.get();
+		return {
+			subjectName,
+			meetings: $(SELECTOR.topicItem)
+				.slice(1)
+				.map((_, el) => {
+					const node = $(el);
+					const meeting = this.#extractMeeting(node);
+					meeting.subject = subjectName;
+					return new Meeting(meeting.subject, meeting.title, meeting.lectures);
+				})
+				.get(),
+		};
 	}
 
 	public collectSubjectLinks(html: string): string[] {
 		const $ = cheerio.load(html);
 		return $(SELECTOR.subjectCard)
-			.map((_, el) => {
-				const url = $(el).attr("href");
-				return url;
-			})
+			.map((_, el) => $(el).attr("href"))
 			.get()
 			.filter((url) => url !== undefined);
 	}
@@ -129,11 +136,12 @@ export class Collector implements ICollector {
 				const url = new URL(link);
 				const id = url.searchParams.get("id");
 				if (id === null) return undefined;
-
+				this.#logger.info(`collecting content for ${id}`);
 				const lmsContent = await this.#httpClient.fetchLmsContent(link);
-				const meetings = this.#collectMeetings(lmsContent);
+				const { subjectName, meetings } = this.#collectMeetings(lmsContent);
 				const lecturer = this.#extractLecturer(lmsContent);
-				return new Subject(lecturer, id, meetings);
+				this.#logger.info(`done with ${id}`);
+				return new Subject(subjectName, lecturer, id, meetings);
 			})
 		);
 		return subjects.filter((subject): subject is Subject => subject !== undefined);

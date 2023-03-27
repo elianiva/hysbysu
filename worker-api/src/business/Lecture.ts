@@ -6,6 +6,7 @@ export const LECTURE_TYPE = {
 	url: "url",
 	quiz: "quiz",
 	forum: "forum",
+	page: "page",
 	unknown: "unknown",
 } as const;
 
