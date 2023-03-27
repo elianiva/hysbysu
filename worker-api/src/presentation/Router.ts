@@ -5,14 +5,12 @@ import { Subject } from "~/business/Subject";
 import { Env } from "~/types/env";
 
 export class Router {
-	#env: Env;
 	#app: Hono;
 	#rxSubject: RxSubject<string>;
 
-	constructor(rxSubject: RxSubject<string>, env: Env) {
+	constructor(rxSubject: RxSubject<string>) {
 		this.#app = new Hono();
 		this.#rxSubject = rxSubject;
-		this.#env = env;
 		this._bindRoutes();
 		this._bindApiRoutes();
 	}
@@ -26,11 +24,12 @@ export class Router {
 	}
 
 	private _bindApiRoutes() {
-		const apiRoutes = new Hono();
+		const apiRoutes = new Hono<{ Bindings: Env }>();
 		apiRoutes.use("*", cors());
 		apiRoutes.get("/subjects", async (c) => {
-			const { keys } = await this.#env.HYSBYSU_STORAGE.list({ prefix: "subject_" });
-			const subjects = await Promise.all(keys.map((key) => this.#env.HYSBYSU_STORAGE.get(key.name)));
+			c.env;
+			const { keys } = await c.env.HYSBYSU_STORAGE.list({ prefix: "subject_" });
+			const subjects = await Promise.all(keys.map((key) => c.env.HYSBYSU_STORAGE.get(key.name)));
 			return c.json({
 				subjects: subjects
 					.filter((subject): subject is string => subject !== null)

@@ -1,19 +1,22 @@
 import { Env } from "~/types/env";
 import { HttpClient } from "./HttpClient";
 import { ICollector } from "./interfaces/ICollector";
+import { IPresenter } from "./interfaces/IPresenter";
 import { Subject } from "~/business/Subject";
 import { Meeting } from "~/business/Meeting";
 import { Lecture } from "~/business/Lecture";
 
 export class Worker {
-	private _httpClient: HttpClient;
+	#httpClient: HttpClient;
 	#collector: ICollector;
-	private _env: Env;
+	#env: Env;
+	#presenter: IPresenter;
 
-	constructor(httpClient: HttpClient, env: Env, collector: ICollector) {
-		this._httpClient = httpClient;
-		this._env = env;
+	constructor(httpClient: HttpClient, env: Env, collector: ICollector, presenter: IPresenter) {
+		this.#httpClient = httpClient;
+		this.#env = env;
 		this.#collector = collector;
+		this.#presenter = presenter;
 	}
 
 	#getMeetingsDiff(oldSubject: Subject, newSubject: Subject): Meeting[] {
@@ -61,22 +64,28 @@ export class Worker {
 	}
 
 	public async handle() {
-		await this._httpClient.collectCookies();
-		const subjectsContent = await this._httpClient.fetchSubjectsContent();
+		await this.#httpClient.collectCookies();
+		const subjectsContent = await this.#httpClient.fetchSubjectsContent();
 		const subjects = await this.#collector.collectSubjects(subjectsContent);
 		const diffingTasks = subjects.map(async (subject) => {
-			const oldSubjectString = await this._env.HYSBYSU_STORAGE.get(`subject_${subject.courseId}`);
+			const oldSubjectString = await this.#env.HYSBYSU_STORAGE.get(`subject_${subject.courseId}`);
 			const oldSubject = Subject.fromJson(oldSubjectString);
 
 			if (subject.meetings.length > 0 && oldSubject !== null && oldSubject.meetings.length > 0) {
 				const meetingsDiff = this.#getMeetingsDiff(oldSubject, subject);
 				if (meetingsDiff.length > 0) {
-					console.log({ meetingsDiff });
+					this.#presenter.notify(meetingsDiff);
 				}
 			}
 
-			await this._env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
+			await this.#env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
 		});
-		await Promise.all(diffingTasks);
+		try {
+			await Promise.all(diffingTasks);
+		} catch (err: unknown) {
+			if (err instanceof Error) {
+				this.#presenter.error(err.message);
+			}
+		}
 	}
 }

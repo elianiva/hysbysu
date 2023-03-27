@@ -1,52 +1,55 @@
 import { Subject } from "rxjs";
 import { HttpClient } from "./application/HttpClient";
 import { ICollector } from "./application/interfaces/ICollector";
-import { ICookieJar } from "./application/interfaces/ICookieJar";
-import { ILogger } from "./application/interfaces/ILogger";
 import { Worker } from "./application/Worker";
 import { ConsoleLogger } from "./infrastructure/ConsoleLogger";
 import { CookieJar } from "./infrastructure/CookieJar";
 import { Router } from "./presentation/Router";
 import { Env } from "./types/env";
 import { Collector } from "./infrastructure/Collector";
+import { DiscordPresenter } from "~/infrastructure/DiscordPresenter";
+import { IPresenter } from "~/application/interfaces/IPresenter";
 
 type Dependency = {
-	router: Router | null;
 	worker: Worker | null;
 	httpClient: HttpClient | null;
-	logger: ILogger | null;
-	cookieJar: ICookieJar | null;
 	collector: ICollector | null;
+	presenter: IPresenter | null;
 };
 
-// lazily initialise dependencies
+// lazily initialise these dependencies because they need the environment bindings
 const deps: Dependency = {
-	router: null,
 	worker: null,
 	httpClient: null,
-	logger: null,
-	cookieJar: null,
 	collector: null,
+	presenter: null,
 };
 
 const rxSubject = new Subject<string>();
-rxSubject.subscribe(() => {
-	console.log("Worker triggered from route");
-	deps.worker?.handle();
+
+const logger = new ConsoleLogger();
+const cookieJar = new CookieJar();
+const router = new Router(rxSubject);
+
+rxSubject.subscribe(async () => {
+	try {
+		await deps.presenter?.info("fetching new LMS information");
+		await deps.worker?.handle();
+		await deps.presenter?.info("new LMS information successfully fetched");
+	} catch (err) {
+		await deps.presenter?.error("failed to fetch new LMS information");
+	}
 });
 
 export default {
 	scheduled: (controller: ScheduledController, env: Env) => {
-		deps.logger ??= new ConsoleLogger();
-		deps.cookieJar ??= new CookieJar();
-		deps.httpClient ??= new HttpClient(env, deps.logger, deps.cookieJar);
-		deps.collector ??= new Collector(deps.httpClient, deps.logger);
-		deps.worker ??= new Worker(deps.httpClient, env, deps.collector);
-
+		deps.httpClient ??= new HttpClient(env, logger, cookieJar);
+		deps.collector ??= new Collector(deps.httpClient, logger);
+		deps.presenter ??= new DiscordPresenter(logger, env);
+		deps.worker ??= new Worker(deps.httpClient, env, deps.collector, deps.presenter);
 		return deps.worker.handle();
 	},
 	fetch: (request: Request, env: Env, ctx: ExecutionContext) => {
-		deps.router ??= new Router(rxSubject, env);
-		return deps.router.handle(request, env, ctx);
+		return router.handle(request, env, ctx);
 	},
 };

@@ -3,3 +3,7 @@ SLC_URL=slc_url
 LMS_URL=lms_url
 NIM=1234567890
 PASSWORD=strong_password
+DISCORD_TOKEN=something
+DISCORD_CHANNEL_ID=something
+DISCORD_CLIENT_ID=something
+DISCORD_GUILD_ID=something

@@ -5,4 +5,8 @@ export type Env = {
 	LMS_URL: string;
 	NIM: string;
 	PASSWORD: string;
+	DISCORD_TOKEN: string;
+	DISCORD_CHANNEL_ID: string;
+	DISCORD_CLIENT_ID: string;
+	DISCORD_GUILD_ID: string;
 };
