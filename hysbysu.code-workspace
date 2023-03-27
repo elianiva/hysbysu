@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "name": "Root",
+      "path": "."
+    },
+    {
+      "name": "Frontend",
+      "path": "./frontend"
+    },
+    {
+      "name": "Worker API",
+      "path": "./worker-api"
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "Worker API/node_modules/typescript/lib"
+  }
+}

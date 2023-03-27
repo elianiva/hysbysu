@@ -1,0 +1,17 @@
+name = "worker-api"
+compatibility_date = "2023-03-25"
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[vars]
+SIAKAD_URL = ""
+SLC_URL = ""
+LMS_URL = ""
+NIM = ""
+PASSWORD = ""
+
+[[kv_namespaces]]
+binding = "HYSBYSU_STORAGE"
+id = ""
+preview_id = ""
