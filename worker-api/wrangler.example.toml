@@ -11,6 +11,8 @@ SLC_URL = ""
 LMS_URL = ""
 NIM = ""
 PASSWORD = ""
+NOTIFICATION_API_SECRET = ""
+NOTIFICATION_API_BASE_URL = ""
 
 [[kv_namespaces]]
 binding = "HYSBYSU_STORAGE"

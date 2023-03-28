@@ -61,7 +61,7 @@ export class HttpClient {
 
 		// merge headers if it's provided from the option
 		if (options.headers !== undefined) {
-			for (const [key, value] of (options.headers as Headers).entries()) {
+			for (const [key, value] of Object.entries(options.headers as Headers)) {
 				headers.set(key, value);
 			}
 		}

@@ -1,0 +1,49 @@
+import { IWebhook } from "~/application/interfaces/IWebhook";
+import { Env } from "~/types/env";
+import { Subject } from "~/business/Subject";
+import { ofetch } from "ofetch";
+import { FetchOptions } from "ofetch/dist/node";
+
+// currently only support sending to the discord notification API, soon it should support multiple webhook urls
+export class Webhook implements IWebhook {
+	#env: Env;
+
+	constructor(env: Env) {
+		this.#env = env;
+	}
+
+	async #fetch(path: string, options: FetchOptions = {}) {
+		return ofetch(`${this.#env.NOTIFICATION_API_SECRET}/${path}`, {
+			...options,
+			headers: {
+				// to prevent people abusing the discord bot
+				// when the webhook api is supported, we should improve this handling
+				"X-Api-Secret": this.#env.NOTIFICATION_API_SECRET,
+			},
+		});
+	}
+
+	public error(message: string): Promise<void> {
+		return this.#fetch("send-error", {
+			body: {
+				message,
+			},
+		});
+	}
+
+	public info(message: string): Promise<void> {
+		return this.#fetch("send-info", {
+			body: {
+				message,
+			},
+		});
+	}
+
+	public notify(subject: Subject): Promise<void> {
+		return this.#fetch("send-notification", {
+			body: {
+				subject,
+			},
+		});
+	}
+}
