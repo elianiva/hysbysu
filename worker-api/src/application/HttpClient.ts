@@ -61,7 +61,7 @@ export class HttpClient {
 
 		// merge headers if it's provided from the option
 		if (options.headers !== undefined) {
-			for (const [key, value] of Object.entries(options.headers as Headers)) {
+			for (const [key, value] of (options.headers as Map<string, string>).entries()) {
 				headers.set(key, value);
 			}
 		}
@@ -138,7 +138,6 @@ export class HttpClient {
 			}
 		}
 
-		const response = await this.fetch(courseUrl, { parseResponse: (text) => text });
-		return response;
+		return await this.fetch(courseUrl, { parseResponse: (text) => text });
 	}
 }

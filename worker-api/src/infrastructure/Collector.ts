@@ -66,7 +66,7 @@ export class Collector implements ICollector {
 				break;
 		}
 
-		return new Lecture(name, url, lectureType, deadline);
+		return { name, url, type: lectureType, deadline };
 	}
 
 	#extractMeeting(element: cheerio.Cheerio<cheerio.Element>): Meeting {
@@ -74,14 +74,16 @@ export class Collector implements ICollector {
 		const $lectures = element.find(SELECTOR.lectureList) ?? [];
 		const lectures = $lectures
 			.map((_, el) => {
-				const $ = cheerio.load(element.html(), null, false);
+				const htmlText = element.html();
+				if (htmlText === null) return undefined;
+				const $ = cheerio.load(htmlText, null, false);
 				const node = $(el);
 				return this.#extractLecture(node);
 			})
 			.get()
 			.filter((lecture) => lecture !== undefined);
 
-		return new Meeting("<unknown>", sectionTitle, lectures);
+		return { subject: "<unknown>", title: sectionTitle, lectures };
 	}
 
 	#extractLecturer(html: string): Lecturer {
@@ -100,7 +102,7 @@ export class Collector implements ICollector {
 			name = "<unknown>";
 		}
 
-		return new Lecturer(name, imageUrl);
+		return { name, imageUrl };
 	}
 
 	#collectMeetings(rawMeetings: string): { subjectName: string; meetings: Meeting[] } {
@@ -115,7 +117,7 @@ export class Collector implements ICollector {
 					const node = $(el);
 					const meeting = this.#extractMeeting(node);
 					meeting.subject = subjectName;
-					return new Meeting(meeting.subject, meeting.title, meeting.lectures);
+					return meeting;
 				})
 				.get(),
 		};
@@ -141,7 +143,7 @@ export class Collector implements ICollector {
 				const { subjectName, meetings } = this.#collectMeetings(lmsContent);
 				const lecturer = this.#extractLecturer(lmsContent);
 				this.#logger.info(`done with ${id}`);
-				return new Subject(subjectName, lecturer, id, meetings);
+				return { title: subjectName, lecturer, courseId: id, meetings };
 			})
 		);
 		return subjects.filter((subject): subject is Subject => subject !== undefined);

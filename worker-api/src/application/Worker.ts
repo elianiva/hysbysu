@@ -2,8 +2,8 @@ import { Env } from "~/types/env";
 import { HttpClient } from "./HttpClient";
 import { ICollector } from "./interfaces/ICollector";
 import { Subject } from "~/business/Subject";
-import { Meeting } from "~/business/Meeting";
-import { Lecture } from "~/business/Lecture";
+import { compareMeeting, Meeting } from "~/business/Meeting";
+import { compareLecture, Lecture } from "~/business/Lecture";
 
 export class Worker {
 	#httpClient: HttpClient;
@@ -29,10 +29,10 @@ export class Worker {
 		for (let i = 0; i < slicedMeetings.length; i++) {
 			const currentMeeting = slicedMeetings[i];
 			const oldMeeting = oldSubject.meetings[i];
-			const isEqual = slicedMeetings[i].compare(oldMeeting);
+			const isEqual = compareMeeting(slicedMeetings[1], oldMeeting);
 			const lecturesDiff = this.#getLecturesDiff(oldMeeting, currentMeeting);
 			if (isEqual && lecturesDiff.length < 1) continue;
-			result.push(new Meeting(currentMeeting.subject, currentMeeting.title, lecturesDiff));
+			result.push({ subject: currentMeeting.subject, title: currentMeeting.title, lectures: lecturesDiff });
 		}
 
 		return result;
@@ -51,7 +51,7 @@ export class Worker {
 			for (let i = 0; i < oldMeeting.lectures.length; i++) {
 				const oldLecture = oldMeeting.lectures[i];
 				const currentLecture = newMeeting.lectures[i];
-				const isEqual = oldLecture.compare(currentLecture);
+				const isEqual = compareLecture(oldLecture, currentLecture);
 				if (isEqual) continue;
 				result.push(currentLecture);
 			}
@@ -66,7 +66,8 @@ export class Worker {
 		const subjects = await this.#collector.collectSubjects(subjectsContent);
 		const diffingTasks = subjects.map(async (subject) => {
 			const oldSubjectString = await this.#env.HYSBYSU_STORAGE.get(`subject_${subject.courseId}`);
-			const oldSubject = Subject.fromJson(oldSubjectString);
+			if (oldSubjectString === null) return;
+			const oldSubject = JSON.parse(oldSubjectString) as Subject;
 
 			if (subject.meetings.length > 0 && oldSubject !== null && oldSubject.meetings.length > 0) {
 				const meetingsDiff = this.#getMeetingsDiff(oldSubject, subject);
