@@ -13,12 +13,13 @@ export class Webhook implements IWebhook {
 	}
 
 	async #fetch(path: string, options: FetchOptions = {}) {
-		return ofetch(`${this.#env.NOTIFICATION_API_SECRET}/${path}`, {
+		return ofetch(`${this.#env.NOTIFICATION_API_BASE_URL}/api/${path}`, {
 			...options,
+			method: "POST",
 			headers: {
 				// to prevent people abusing the discord bot
 				// when the webhook api is supported, we should improve this handling
-				"X-Api-Secret": this.#env.NOTIFICATION_API_SECRET,
+				"X-Api-Key": this.#env.NOTIFICATION_API_SECRET,
 			},
 		});
 	}

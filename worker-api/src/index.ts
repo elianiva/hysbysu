@@ -43,13 +43,13 @@ rxSubject.subscribe(async () => {
 
 export default {
 	scheduled: (controller: ScheduledController, env: Env) => {
+		deps.webhook ??= new Webhook(env);
 		deps.httpClient ??= new HttpClient(env, logger, cookieJar);
 		deps.collector ??= new Collector(deps.httpClient, logger);
-		deps.worker ??= new Worker(deps.httpClient, env, deps.collector);
+		deps.worker ??= new Worker(deps.httpClient, env, deps.collector, deps.webhook, logger);
 		return deps.worker.handle();
 	},
 	fetch: (request: Request, env: Env, ctx: ExecutionContext) => {
-		deps.webhook ??= new Webhook(env);
 		return router.handle(request, env, ctx);
 	},
 };

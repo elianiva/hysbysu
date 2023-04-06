@@ -4,16 +4,22 @@ import { ICollector } from "./interfaces/ICollector";
 import { Subject } from "~/business/Subject";
 import { compareMeeting, Meeting } from "~/business/Meeting";
 import { compareLecture, Lecture } from "~/business/Lecture";
+import { IWebhook } from "~/application/interfaces/IWebhook";
+import { ILogger } from "~/application/interfaces/ILogger";
 
 export class Worker {
 	#httpClient: HttpClient;
 	#collector: ICollector;
 	#env: Env;
+	#webhook: IWebhook;
+	#logger: ILogger;
 
-	constructor(httpClient: HttpClient, env: Env, collector: ICollector) {
+	constructor(httpClient: HttpClient, env: Env, collector: ICollector, webhook: IWebhook, logger: ILogger) {
 		this.#httpClient = httpClient;
 		this.#env = env;
 		this.#collector = collector;
+		this.#webhook = webhook;
+		this.#logger = logger;
 	}
 
 	#getMeetingsDiff(oldSubject: Subject, newSubject: Subject): Meeting[] {
@@ -62,28 +68,57 @@ export class Worker {
 
 	public async handle() {
 		await this.#httpClient.collectCookies();
+		const cachedSubjectsContent = await this.#env.HYSBYSU_STORAGE.get("subjects_content_cache");
 		const subjectsContent = await this.#httpClient.fetchSubjectsContent();
+
+		// just skip if there's no difference in the overall html
+		if (cachedSubjectsContent === subjectsContent) return;
+
 		const subjects = await this.#collector.collectSubjects(subjectsContent);
 		const diffingTasks = subjects.map(async (subject) => {
-			const oldSubjectString = await this.#env.HYSBYSU_STORAGE.get(`subject_${subject.courseId}`);
+			let oldSubjectString: string | null = null;
+			try {
+				oldSubjectString = await this.#env.HYSBYSU_STORAGE.get(`subject_${subject.courseId}`);
+			} catch (err: unknown) {
+				if (err instanceof Error) {
+					this.#logger.error(err.message);
+					await this.#webhook.error(
+						`Failed to get old data for: ${subject.courseId}. Reason: ${err.message}`
+					);
+				}
+			}
 			if (oldSubjectString === null) return;
+
 			const oldSubject = JSON.parse(oldSubjectString) as Subject;
 
 			if (subject.meetings.length > 0 && oldSubject !== null && oldSubject.meetings.length > 0) {
 				const meetingsDiff = this.#getMeetingsDiff(oldSubject, subject);
 				if (meetingsDiff.length > 0) {
-					console.log({ meetingsDiff });
-					// this.#presenter.notify(meetingsDiff);
+					await this.#webhook.notify({
+						...subject,
+						meetings: meetingsDiff,
+					});
 				}
 			}
 
-			await this.#env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
+			try {
+				await this.#env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
+			} catch (err: unknown) {
+				if (err instanceof Error) {
+					this.#logger.error(err.message);
+					await this.#webhook.error(
+						`Failed to save new data for: ${subject.courseId}. Reason: ${err.message}`
+					);
+				}
+			}
 		});
+
 		try {
 			await Promise.all(diffingTasks);
 		} catch (err: unknown) {
 			if (err instanceof Error) {
-				console.log(err);
+				this.#logger.error(err.message);
+				await this.#webhook.error(err.message);
 			}
 		}
 	}
