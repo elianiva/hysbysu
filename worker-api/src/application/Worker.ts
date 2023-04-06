@@ -35,7 +35,7 @@ export class Worker {
 		for (let i = 0; i < slicedMeetings.length; i++) {
 			const currentMeeting = slicedMeetings[i];
 			const oldMeeting = oldSubject.meetings[i];
-			const isEqual = compareMeeting(slicedMeetings[1], oldMeeting);
+			const isEqual = compareMeeting(currentMeeting, oldMeeting);
 			const lecturesDiff = this.#getLecturesDiff(oldMeeting, currentMeeting);
 			if (isEqual && lecturesDiff.length < 1) continue;
 			result.push({ subject: currentMeeting.subject, title: currentMeeting.title, lectures: lecturesDiff });
@@ -46,7 +46,7 @@ export class Worker {
 
 	#getLecturesDiff(oldMeeting: Meeting, newMeeting: Meeting): Lecture[] {
 		const oldLength = oldMeeting.lectures.length;
-		const newLength = oldMeeting.lectures.length;
+		const newLength = newMeeting.lectures.length;
 		const result: Lecture[] = [];
 
 		if (newLength > oldLength) {
