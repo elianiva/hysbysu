@@ -32,10 +32,10 @@ export class Worker {
 	#getMeetingsDiff(oldSubject: Subject, newSubject: Subject): Meeting[] {
 		const oldLength = oldSubject.meetings.length;
 		const newLength = newSubject.meetings.length;
-		const result: Meeting[] = [];
+		let result: Meeting[] = [];
 
 		if (newLength > oldLength) {
-			result.concat(newSubject.meetings.slice(oldLength));
+			result = result.concat(newSubject.meetings.slice(oldLength));
 		}
 
 		const slicedMeetings = newSubject.meetings.slice(0, oldLength);
