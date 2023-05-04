@@ -40,12 +40,12 @@ export class Worker {
 
 		const slicedMeetings = newSubject.meetings.slice(0, oldLength);
 		for (let i = 0; i < slicedMeetings.length; i++) {
-			const currentMeeting = slicedMeetings[i];
+			const newMeeting = slicedMeetings[i];
 			const oldMeeting = oldSubject.meetings[i];
-			const isEqual = compareMeeting(currentMeeting, oldMeeting);
-			const lecturesDiff = this.#getLecturesDiff(oldMeeting, currentMeeting);
+			const isEqual = compareMeeting(newMeeting, oldMeeting);
+			const lecturesDiff = this.#getLecturesDiff(oldMeeting, newMeeting);
 			if (isEqual && lecturesDiff.length < 1) continue;
-			result.push({ subject: currentMeeting.subject, title: currentMeeting.title, lectures: lecturesDiff });
+			result.push({ subject: newMeeting.subject, title: newMeeting.title, lectures: lecturesDiff });
 		}
 
 		return result;
@@ -54,20 +54,18 @@ export class Worker {
 	#getLecturesDiff(oldMeeting: Meeting, newMeeting: Meeting): Lecture[] {
 		const oldLength = oldMeeting.lectures.length;
 		const newLength = newMeeting.lectures.length;
-		const result: Lecture[] = [];
+		let result: Lecture[] = [];
 
 		if (newLength > oldLength) {
-			result.concat(newMeeting.lectures.slice(oldLength));
+			result = result.concat(newMeeting.lectures.slice(oldLength));
 		}
 
-		if (newLength === oldLength) {
-			for (let i = 0; i < oldMeeting.lectures.length; i++) {
-				const oldLecture = oldMeeting.lectures[i];
-				const currentLecture = newMeeting.lectures[i];
-				const isEqual = compareLecture(oldLecture, currentLecture);
-				if (isEqual) continue;
-				result.push(currentLecture);
-			}
+		for (let i = 0; i < oldMeeting.lectures.length; i++) {
+			const oldLecture = oldMeeting.lectures[i];
+			const currentLecture = newMeeting.lectures[i];
+			const isEqual = compareLecture(oldLecture, currentLecture);
+			if (isEqual) continue;
+			result.push(currentLecture);
 		}
 
 		return result;
@@ -106,7 +104,7 @@ export class Worker {
 			}
 
 			try {
-				await this.#env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
+				// await this.#env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
 			} catch (err: unknown) {
 				if (err instanceof Error) {
 					this.#logger.error(err.message);
