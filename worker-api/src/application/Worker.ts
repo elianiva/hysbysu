@@ -7,6 +7,13 @@ import { compareLecture, Lecture } from "~/business/Lecture";
 import { IWebhook } from "~/application/interfaces/IWebhook";
 import { ILogger } from "~/application/interfaces/ILogger";
 
+type HandlerOption = {
+	slice: {
+		start: number;
+		end: number;
+	};
+};
+
 export class Worker {
 	#httpClient: HttpClient;
 	#collector: ICollector;
@@ -66,15 +73,13 @@ export class Worker {
 		return result;
 	}
 
-	public async handle() {
+	public async handle(options: HandlerOption) {
 		await this.#httpClient.collectCookies();
-		const cachedSubjectsContent = await this.#env.HYSBYSU_STORAGE.get("subjects_content_cache");
+		this.#logger.info("Fetching cache...");
 		const subjectsContent = await this.#httpClient.fetchSubjectsContent();
-
-		// just skip if there's no difference in the overall html
-		if (cachedSubjectsContent === subjectsContent) return;
-
-		const subjects = await this.#collector.collectSubjects(subjectsContent);
+		const subjects = await this.#collector.collectSubjects(subjectsContent, {
+			slice: options.slice,
+		});
 		const diffingTasks = subjects.map(async (subject) => {
 			let oldSubjectString: string | null = null;
 			try {
@@ -90,7 +95,6 @@ export class Worker {
 			if (oldSubjectString === null) return;
 
 			const oldSubject = JSON.parse(oldSubjectString) as Subject;
-
 			if (subject.meetings.length > 0 && oldSubject !== null && oldSubject.meetings.length > 0) {
 				const meetingsDiff = this.#getMeetingsDiff(oldSubject, subject);
 				if (meetingsDiff.length > 0) {

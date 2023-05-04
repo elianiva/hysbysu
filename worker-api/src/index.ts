@@ -34,7 +34,8 @@ const router = new Router(rxSubject);
 rxSubject.subscribe(async () => {
 	try {
 		await deps.webhook?.info("fetching new LMS information");
-		await deps.worker?.handle();
+		// TODO(elianiva): might want to fix this in the future
+		// await deps.worker?.handle();
 		await deps.webhook?.info("new LMS information successfully fetched");
 	} catch (err) {
 		await deps.webhook?.error("failed to fetch new LMS information");
@@ -47,7 +48,18 @@ export default {
 		deps.httpClient ??= new HttpClient(env, logger, cookieJar);
 		deps.collector ??= new Collector(deps.httpClient, logger);
 		deps.worker ??= new Worker(deps.httpClient, env, deps.collector, deps.webhook, logger);
-		return deps.worker.handle();
+
+		// trigger each trigger differently to avoid cpu time limit
+		switch (controller.cron) {
+			case "*/10 * * * *":
+				deps.worker.handle({ slice: { start: 0, end: 4 } });
+				break;
+			case "*/11 * * * *":
+				deps.worker.handle({ slice: { start: 4, end: 8 } });
+				break;
+			default:
+			//noop
+		}
 	},
 	fetch: (request: Request, env: Env, ctx: ExecutionContext) => {
 		return router.handle(request, env, ctx);

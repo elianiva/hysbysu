@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import { HttpClient } from "~/application/HttpClient";
-import { ICollector } from "~/application/interfaces/ICollector";
+import { CollectSubjectOptions, ICollector } from "~/application/interfaces/ICollector";
 import { Lecture, LECTURE_TYPE, LectureType } from "~/business/Lecture";
 import { Lecturer } from "~/business/Lecturer";
 import { Meeting } from "~/business/Meeting";
@@ -131,10 +131,10 @@ export class Collector implements ICollector {
 			.filter((url) => url !== undefined);
 	}
 
-	public async collectSubjects(rawSubjects: string): Promise<Subject[]> {
-		const links = this.collectSubjectLinks(rawSubjects);
+	public async collectSubjects(rawSubjects: string, options: CollectSubjectOptions): Promise<Subject[]> {
+		const links = this.collectSubjectLinks(rawSubjects).sort();
 		const subjects = await Promise.all(
-			links.map(async (link) => {
+			links.slice(options.slice.start, options.slice.end).map(async (link) => {
 				const url = new URL(link);
 				const id = url.searchParams.get("id");
 				if (id === null) return undefined;
