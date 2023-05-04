@@ -56,15 +56,12 @@ export default {
 		// trigger each trigger differently to avoid cpu time limit
 		switch (controller.cron) {
 			case "*/10 * * * *":
-				await deps.worker.handle({ slice: { start: 0, end: 2 } });
+				await deps.worker.handle({ slice: { start: 0, end: 3 } });
 				break;
 			case "*/11 * * * *":
-				await deps.worker.handle({ slice: { start: 2, end: 4 } });
+				await deps.worker.handle({ slice: { start: 3, end: 6 } });
 				break;
 			case "*/12 * * * *":
-				await deps.worker.handle({ slice: { start: 4, end: 6 } });
-				break;
-			case "*/13 * * * *":
 				await deps.worker.handle({ slice: { start: 6, end: 8 } });
 				break;
 			default:
