@@ -7,4 +7,5 @@ export type Env = {
 	PASSWORD: string;
 	NOTIFICATION_API_SECRET: string;
 	NOTIFICATION_API_BASE_URL: string;
+	ENVIRONMENT: "production" | "development";
 };

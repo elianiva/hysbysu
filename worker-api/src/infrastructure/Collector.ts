@@ -132,9 +132,9 @@ export class Collector implements ICollector {
 	}
 
 	public async collectSubjects(rawSubjects: string, options: CollectSubjectOptions): Promise<Subject[]> {
-		const links = this.collectSubjectLinks(rawSubjects).sort();
+		const links = this.collectSubjectLinks(rawSubjects).sort().slice(options.slice.start, options.slice.end);
 		const subjects = await Promise.all(
-			links.slice(options.slice.start, options.slice.end).map(async (link) => {
+			links.map(async (link) => {
 				const url = new URL(link);
 				const id = url.searchParams.get("id");
 				if (id === null) return undefined;

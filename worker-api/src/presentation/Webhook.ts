@@ -33,13 +33,11 @@ export class Webhook implements IWebhook {
 	}
 
 	public info(message: string): Promise<void> {
-		console.log(message);
-		return Promise.resolve();
-		// return this.#fetch("send-info", {
-		// 	body: {
-		// 		message,
-		// 	},
-		// });
+		return this.#fetch("send-info", {
+			body: {
+				message,
+			},
+		});
 	}
 
 	public notify(subject: Subject): Promise<void> {
