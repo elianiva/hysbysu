@@ -16,8 +16,12 @@ export type Lecture = {
 	url: string;
 	type: LectureType;
 	deadline: Date | undefined;
-}
+};
 
 export function compareLecture(left: Lecture, right: Lecture) {
-	return left.name === right.name && left.url === right.url && left.type === right.type;
+	return (
+		left.name === right.name &&
+		left.url === right.url &&
+		left.type === right.type
+	);
 }

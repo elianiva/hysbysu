@@ -1,4 +1,4 @@
-import { Subject } from "~/business/Subject";
+import type { Subject } from "~/business/Subject";
 
 export type CollectSubjectOptions = {
 	slice: {
@@ -8,5 +8,8 @@ export type CollectSubjectOptions = {
 };
 
 export interface ICollector {
-	collectSubjects(rawSubjects: string, options: CollectSubjectOptions): Promise<Subject[]>;
+	collectSubjects(
+		rawSubjects: string,
+		options: CollectSubjectOptions,
+	): Promise<Subject[]>;
 }

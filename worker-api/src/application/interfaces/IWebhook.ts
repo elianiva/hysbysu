@@ -1,4 +1,4 @@
-import { Subject } from "~/business/Subject";
+import type { Subject } from "~/business/Subject";
 
 export interface IWebhook {
 	notify(subject: Subject): Promise<void>;

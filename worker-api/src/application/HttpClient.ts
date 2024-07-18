@@ -1,7 +1,7 @@
-import { FetchOptions, Headers, ofetch } from "ofetch";
-import { Env } from "~/types/env";
-import { ICookieJar } from "./interfaces/ICookieJar";
-import { ILogger } from "./interfaces/ILogger";
+import { type FetchOptions, Headers, ofetch } from "ofetch";
+import type { Env } from "~/types/env";
+import type { ICookieJar } from "./interfaces/ICookieJar";
+import type { ILogger } from "./interfaces/ILogger";
 
 export class HttpClient {
 	#env: Env;
@@ -51,7 +51,7 @@ export class HttpClient {
 
 	private async fetch(url: RequestInfo, options: FetchOptions = {}) {
 		// serialise the cookie
-		let cookieString = this.#cookieJar
+		const cookieString = this.#cookieJar
 			.entries()
 			.map((cookie) => `${cookie.key}=${cookie.value}`)
 			.join("; ");
@@ -61,7 +61,9 @@ export class HttpClient {
 
 		// merge headers if it's provided from the option
 		if (options.headers !== undefined) {
-			for (const [key, value] of (options.headers as Map<string, string>).entries()) {
+			for (const [key, value] of (
+				options.headers as Map<string, string>
+			).entries()) {
 				headers.set(key, value);
 			}
 		}
@@ -116,7 +118,9 @@ export class HttpClient {
 	}
 
 	public async fetchSubjectsContent() {
-		const response: string = await this.fetch(`${this.#env.SLC_URL}/spada`, { parseResponse: (text) => text });
+		const response: string = await this.fetch(`${this.#env.SLC_URL}/spada`, {
+			parseResponse: (text) => text,
+		});
 		return response;
 	}
 
@@ -124,7 +128,9 @@ export class HttpClient {
 		// the first firstResponse, which has a url format of `slcUrl/spada/?gotourl=xxx` is used to get the cookie needed for the lms page itself
 		// the firstResponse is a <script>window.location="<lmsUrl>"</script>, which we do in the second request
 		// not sure why they use client side redirect instead of responding with 302 status code
-		await this.fetch(`${this.#env.SLC_URL}/spada?gotourl=${encodeURIComponent(courseUrl)}`);
+		await this.fetch(
+			`${this.#env.SLC_URL}/spada?gotourl=${encodeURIComponent(courseUrl)}`,
+		);
 		if (!this.#hasMoodleSession) {
 			const headers = new Headers();
 			headers.set("Sec-Fetch-Site", "same-site");

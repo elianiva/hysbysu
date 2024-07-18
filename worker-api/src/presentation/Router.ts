@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { Subject as RxSubject } from "rxjs";
-import { Subject } from "~/business/Subject";
-import { Env } from "~/types/env";
+import type { Subject as RxSubject } from "rxjs";
+import type { Subject } from "~/business/Subject";
+import type { Env } from "~/types/env";
 
 export class Router {
 	#app: Hono;
@@ -29,7 +29,9 @@ export class Router {
 		apiRoutes.get("/subjects", async (c) => {
 			c.env;
 			const { keys } = await c.env.HYSBYSU_STORAGE.list({ prefix: "subject_" });
-			const subjects = await Promise.all(keys.map((key) => c.env.HYSBYSU_STORAGE.get(key.name)));
+			const subjects = await Promise.all(
+				keys.map((key) => c.env.HYSBYSU_STORAGE.get(key.name)),
+			);
 			return c.json({
 				subjects: subjects
 					.filter((subject): subject is string => subject !== null)

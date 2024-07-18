@@ -1,16 +1,16 @@
 import { Subject } from "rxjs";
+import type { IWebhook } from "~/application/interfaces/IWebhook";
+import { Webhook } from "~/presentation/Webhook";
 import { HttpClient } from "./application/HttpClient";
-import { ICollector } from "./application/interfaces/ICollector";
 import { Worker } from "./application/Worker";
+import type { ICollector } from "./application/interfaces/ICollector";
+import type { ILogger } from "./application/interfaces/ILogger";
+import { Collector } from "./infrastructure/Collector";
 import { ConsoleLogger } from "./infrastructure/ConsoleLogger";
 import { CookieJar } from "./infrastructure/CookieJar";
-import { Router } from "./presentation/Router";
-import { Env } from "./types/env";
-import { Collector } from "./infrastructure/Collector";
-import { Webhook } from "~/presentation/Webhook";
-import { IWebhook } from "~/application/interfaces/IWebhook";
-import { ILogger } from "./application/interfaces/ILogger";
 import { NoopLogger } from "./infrastructure/NoopLogger";
+import { Router } from "./presentation/Router";
+import type { Env } from "./types/env";
 
 type Dependency = {
 	worker: Worker | null;
@@ -48,10 +48,17 @@ rxSubject.subscribe(async () => {
 export default {
 	scheduled: async (controller: ScheduledController, env: Env) => {
 		deps.webhook ??= new Webhook(env);
-		deps.logger ??= env.ENVIRONMENT === "production" ? new NoopLogger() : new ConsoleLogger();
+		deps.logger ??=
+			env.ENVIRONMENT === "production" ? new NoopLogger() : new ConsoleLogger();
 		deps.httpClient ??= new HttpClient(env, deps.logger, cookieJar);
 		deps.collector ??= new Collector(deps.httpClient, deps.logger);
-		deps.worker ??= new Worker(deps.httpClient, env, deps.collector, deps.webhook, deps.logger);
+		deps.worker ??= new Worker(
+			deps.httpClient,
+			env,
+			deps.collector,
+			deps.webhook,
+			deps.logger,
+		);
 
 		// trigger each trigger differently to avoid cpu time limit
 		switch (controller.cron) {

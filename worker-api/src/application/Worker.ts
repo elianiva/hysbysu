@@ -1,11 +1,11 @@
-import { Env } from "~/types/env";
-import { HttpClient } from "./HttpClient";
-import { ICollector } from "./interfaces/ICollector";
-import { Subject } from "~/business/Subject";
-import { compareMeeting, Meeting } from "~/business/Meeting";
-import { compareLecture, Lecture } from "~/business/Lecture";
-import { IWebhook } from "~/application/interfaces/IWebhook";
-import { ILogger } from "~/application/interfaces/ILogger";
+import type { ILogger } from "~/application/interfaces/ILogger";
+import type { IWebhook } from "~/application/interfaces/IWebhook";
+import { type Lecture, compareLecture } from "~/business/Lecture";
+import { type Meeting, compareMeeting } from "~/business/Meeting";
+import type { Subject } from "~/business/Subject";
+import type { Env } from "~/types/env";
+import type { HttpClient } from "./HttpClient";
+import type { ICollector } from "./interfaces/ICollector";
 
 type HandlerOption = {
 	slice: {
@@ -21,7 +21,13 @@ export class Worker {
 	#webhook: IWebhook;
 	#logger: ILogger;
 
-	constructor(httpClient: HttpClient, env: Env, collector: ICollector, webhook: IWebhook, logger: ILogger) {
+	constructor(
+		httpClient: HttpClient,
+		env: Env,
+		collector: ICollector,
+		webhook: IWebhook,
+		logger: ILogger,
+	) {
 		this.#httpClient = httpClient;
 		this.#env = env;
 		this.#collector = collector;
@@ -45,7 +51,11 @@ export class Worker {
 			const isEqual = compareMeeting(newMeeting, oldMeeting);
 			const lecturesDiff = this.#getLecturesDiff(oldMeeting, newMeeting);
 			if (isEqual && lecturesDiff.length < 1) continue;
-			result.push({ subject: newMeeting.subject, title: newMeeting.title, lectures: lecturesDiff });
+			result.push({
+				subject: newMeeting.subject,
+				title: newMeeting.title,
+				lectures: lecturesDiff,
+			});
 		}
 
 		return result;
@@ -81,19 +91,25 @@ export class Worker {
 		const diffingTasks = subjects.map(async (subject) => {
 			let oldSubjectString: string | null = null;
 			try {
-				oldSubjectString = await this.#env.HYSBYSU_STORAGE.get(`subject_${subject.courseId}`);
+				oldSubjectString = await this.#env.HYSBYSU_STORAGE.get(
+					`subject_${subject.courseId}`,
+				);
 			} catch (err: unknown) {
 				if (err instanceof Error) {
 					this.#logger.error(err.message);
 					await this.#webhook.error(
-						`Failed to get old data for: ${subject.courseId}. Reason: ${err.message}`
+						`Failed to get old data for: ${subject.courseId}. Reason: ${err.message}`,
 					);
 				}
 			}
 			if (oldSubjectString === null) return;
 
 			const oldSubject = JSON.parse(oldSubjectString) as Subject;
-			if (subject.meetings.length > 0 && oldSubject !== null && oldSubject.meetings.length > 0) {
+			if (
+				subject.meetings.length > 0 &&
+				oldSubject !== null &&
+				oldSubject.meetings.length > 0
+			) {
 				const meetingsDiff = this.#getMeetingsDiff(oldSubject, subject);
 				if (meetingsDiff.length > 0) {
 					await this.#webhook.notify({
@@ -104,12 +120,12 @@ export class Worker {
 			}
 
 			try {
-				// await this.#env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
+				await this.#env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
 			} catch (err: unknown) {
 				if (err instanceof Error) {
 					this.#logger.error(err.message);
 					await this.#webhook.error(
-						`Failed to save new data for: ${subject.courseId}. Reason: ${err.message}`
+						`Failed to save new data for: ${subject.courseId}. Reason: ${err.message}`,
 					);
 				}
 			}

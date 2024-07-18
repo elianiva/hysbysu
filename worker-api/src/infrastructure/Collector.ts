@@ -1,11 +1,18 @@
 import * as cheerio from "cheerio";
-import { HttpClient } from "~/application/HttpClient";
-import { CollectSubjectOptions, ICollector } from "~/application/interfaces/ICollector";
-import { Lecture, LECTURE_TYPE, LectureType } from "~/business/Lecture";
-import { Lecturer } from "~/business/Lecturer";
-import { Meeting } from "~/business/Meeting";
-import { Subject } from "~/business/Subject";
-import { ILogger } from "~/application/interfaces/ILogger";
+import type { HttpClient } from "~/application/HttpClient";
+import type {
+	CollectSubjectOptions,
+	ICollector,
+} from "~/application/interfaces/ICollector";
+import type { ILogger } from "~/application/interfaces/ILogger";
+import {
+	LECTURE_TYPE,
+	type Lecture,
+	type LectureType,
+} from "~/business/Lecture";
+import type { Lecturer } from "~/business/Lecturer";
+import type { Meeting } from "~/business/Meeting";
+import type { Subject } from "~/business/Subject";
 
 const SELECTOR = {
 	subjectCard: ".gallery_grid_item.md-card-content > a",
@@ -44,7 +51,7 @@ export class Collector implements ICollector {
 		if (url === undefined) return undefined;
 
 		let lectureType: LectureType = LECTURE_TYPE.unknown;
-		let deadline = undefined;
+		const deadline = undefined;
 		switch (true) {
 			case classAttribute.includes(SELECTOR.modtypeResource):
 				lectureType = LECTURE_TYPE.resource;
@@ -95,7 +102,7 @@ export class Collector implements ICollector {
 
 		// conditionally append the protocol to handle the lecturer image source correctly
 		if (!imageUrl.startsWith("https://")) {
-			imageUrl = "https:" + imageUrl;
+			imageUrl = `https:${imageUrl}`;
 		}
 
 		if (name.length === 0) {
@@ -105,7 +112,10 @@ export class Collector implements ICollector {
 		return { name, imageUrl };
 	}
 
-	#collectMeetings(rawMeetings: string): { subjectName: string; meetings: Meeting[] } {
+	#collectMeetings(rawMeetings: string): {
+		subjectName: string;
+		meetings: Meeting[];
+	} {
 		const $ = cheerio.load(rawMeetings);
 		const subjectName = $(SELECTOR.subjectName).text();
 		// skip one because the first topicEl is just the detail of the course
@@ -131,8 +141,13 @@ export class Collector implements ICollector {
 			.filter((url) => url !== undefined);
 	}
 
-	public async collectSubjects(rawSubjects: string, options: CollectSubjectOptions): Promise<Subject[]> {
-		const links = this.collectSubjectLinks(rawSubjects).sort().slice(options.slice.start, options.slice.end);
+	public async collectSubjects(
+		rawSubjects: string,
+		options: CollectSubjectOptions,
+	): Promise<Subject[]> {
+		const links = this.collectSubjectLinks(rawSubjects)
+			.sort()
+			.slice(options.slice.start, options.slice.end);
 		const subjects = await Promise.all(
 			links.map(async (link) => {
 				const url = new URL(link);
@@ -144,8 +159,10 @@ export class Collector implements ICollector {
 				const lecturer = this.#extractLecturer(lmsContent);
 				this.#logger.info(`done with ${id}`);
 				return { title: subjectName, lecturer, courseId: id, meetings };
-			})
+			}),
 		);
-		return subjects.filter((subject): subject is Subject => subject !== undefined);
+		return subjects.filter(
+			(subject): subject is Subject => subject !== undefined,
+		);
 	}
 }

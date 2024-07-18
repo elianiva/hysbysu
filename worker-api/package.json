@@ -1,7 +1,7 @@
 {
 	"name": "worker-api",
 	"version": "1.0.0",
-	"description": "",
+	"description": "worker that polls for lms updates and sends them to telegram",
 	"main": "index.js",
 	"scripts": {
 		"dev:local": "wrangler dev --local ./src/index.ts",
@@ -10,19 +10,20 @@
 		"trigger": "curl 'http://localhost:8787/cdn-cgi/mf/scheduled'"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "elianiva",
 	"type": "module",
 	"license": "ISC",
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20230321.0",
-		"esbuild": "^0.17.14",
-		"typescript": "^5.0.2"
+		"@biomejs/biome": "^1.8.3",
+		"@cloudflare/workers-types": "^4.20230511.0",
+		"esbuild": "^0.17.19",
+		"typescript": "^5.0.4"
 	},
 	"dependencies": {
 		"cheerio": "1.0.0-rc.12",
-		"discord.js": "^14.8.0",
-		"hono": "^3.1.2",
+		"discord.js": "^14.11.0",
+		"hono": "^3.1.8",
 		"ofetch": "^1.0.1",
-		"rxjs": "^7.8.0"
+		"rxjs": "^7.8.1"
 	}
 }

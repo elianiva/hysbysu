@@ -1,4 +1,4 @@
-import { Cookie, ICookieJar } from "~/application/interfaces/ICookieJar";
+import type { Cookie, ICookieJar } from "~/application/interfaces/ICookieJar";
 
 export class CookieJar implements ICookieJar {
 	private _storage = new Map<string, Cookie>();
@@ -31,16 +31,18 @@ export class CookieJar implements ICookieJar {
 		// because there can be an ExpiresIn property which will break if we use `, `
 		const cookieStrings = rawCookie.split(/, (?=[a-zA-Z])/);
 		return cookieStrings.map((cookie) => {
-			const kvPairs = cookie.split(";").map((kvPair) => kvPair.split("=").map((s) => s.trim()));
+			const kvPairs = cookie
+				.split(";")
+				.map((kvPair) => kvPair.split("=").map((s) => s.trim()));
 			const [key, value] = kvPairs[0];
 			const properties = Object.fromEntries(kvPairs.slice(1));
 			return {
 				key,
 				value,
-				httpOnly: properties["HttpOnly"] !== undefined,
-				path: properties["Path"],
-				sameSite: properties["SameSite"],
-				secure: properties["Secure"] !== undefined,
+				httpOnly: properties.HttpOnly !== undefined,
+				path: properties.Path,
+				sameSite: properties.SameSite,
+				secure: properties.Secure !== undefined,
 			};
 		});
 	}
