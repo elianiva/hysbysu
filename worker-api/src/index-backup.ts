@@ -1,6 +1,6 @@
 import { Subject } from "rxjs";
 import type { IWebhook } from "~/application/interfaces/IWebhook";
-import { Webhook } from "~/presentation/Webhook";
+import { DiscordWebhook } from "~/presentation/DiscordWebhook";
 import { HttpClient } from "./application/HttpClient";
 import { Worker } from "./application/Worker";
 import type { ICollector } from "./application/interfaces/ICollector";
@@ -47,7 +47,7 @@ rxSubject.subscribe(async () => {
 
 export default {
 	scheduled: async (controller: ScheduledController, env: Env) => {
-		deps.webhook ??= new Webhook(env);
+		deps.webhook ??= new DiscordWebhook(env);
 		deps.logger ??=
 			env.ENVIRONMENT === "production" ? new NoopLogger() : new ConsoleLogger();
 		deps.httpClient ??= new HttpClient(env, deps.logger, cookieJar);

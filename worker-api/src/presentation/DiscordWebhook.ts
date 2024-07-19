@@ -5,7 +5,7 @@ import type { Subject } from "~/business/Subject";
 import type { Env } from "~/env";
 
 // currently only support sending to the discord notification API, soon it should support multiple webhook urls
-export class Webhook implements IWebhook {
+export class DiscordWebhook implements IWebhook {
 	#env: Env;
 
 	constructor(env: Env) {

@@ -10,6 +10,8 @@ const envSchema = z.object({
 	NOTIFICATION_API_BASE_URL: z.string(),
 	ENVIRONMENT: z.union([z.literal("production"), z.literal("development")]),
 	STORAGE_PATH: z.string(),
+	TELEGRAM_TOKEN: z.string(),
+	TELEGRAM_CHAT_ID: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;

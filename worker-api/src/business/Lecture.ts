@@ -18,10 +18,10 @@ export type Lecture = {
 	deadline: Date | undefined;
 };
 
-export function compareLecture(left: Lecture, right: Lecture) {
+export function compareLecture(left: Lecture, right: Lecture | undefined) {
 	return (
-		left.name === right.name &&
-		left.url === right.url &&
-		left.type === right.type
+		left.name === right?.name &&
+		left.url === right?.url &&
+		left.type === right?.type
 	);
 }

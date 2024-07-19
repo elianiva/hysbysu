@@ -102,8 +102,11 @@ export class Worker {
 				this.#logger.info(`Comparing subjects for: ${subject.courseId}`);
 				const oldSubject = JSON.parse(oldSubjectString) as Subject;
 				if (
+					// the new subject has more than 1 meeeting
 					subject.meetings.length > 0 &&
+					// the old subject is not null, meaning that it was saved before
 					oldSubject !== null &&
+					// the old subject has more than 1 meeeting
 					oldSubject.meetings.length > 0
 				) {
 					const meetingsDiff = this.#getMeetingsDiff(oldSubject, subject);
