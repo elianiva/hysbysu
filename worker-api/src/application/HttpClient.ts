@@ -170,4 +170,13 @@ export class HttpClient {
 
 		return await this.fetch(courseUrl, { parseResponse: (text) => text });
 	}
+
+	public async fetchAssignmentContent(assignmentUrl: string) {
+		const headers = new Headers();
+		headers.set("Sec-Fetch-Site", "same-site");
+		headers.set("Referer", assignmentUrl);
+		await this.fetch(assignmentUrl, { headers });
+
+		return await this.fetch(assignmentUrl, { parseResponse: (text) => text });
+	}
 }

@@ -45,7 +45,14 @@ ${subject.meetings
 ${meeting.lectures
 	.filter((lecture) => lecture !== undefined)
 	.map((lecture) => {
-		return `\t- <a href="${lecture.url}">${lecture.name} (${lecture.deadline})</a>`;
+		return `\t- <a href="${lecture.url}">${lecture.name} (${
+			lecture.deadline?.toLocaleDateString("en-GB", {
+				year: "numeric",
+				month: "long",
+				day: "numeric",
+				weekday: "long",
+			}) ?? "no deadline"
+		})</a>`;
 	})
 	.join("\n")}
 `;

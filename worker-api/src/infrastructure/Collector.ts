@@ -27,6 +27,8 @@ const SELECTOR = {
 	modtypePage: "modtype_page",
 	summaryImages: ".summary img",
 	lecturerName: ".summary td strong",
+	assignmentDeadline:
+		".submissionsummarytable > table > tbody > tr:nth-child(3) > td",
 } as const;
 
 export class Collector implements ICollector {
@@ -130,6 +132,13 @@ export class Collector implements ICollector {
 		};
 	}
 
+	#collectAssignmentDeadline(rawLecture: string) {
+		const $ = cheerio.load(rawLecture);
+		const deadline = $(SELECTOR.assignmentDeadline).text();
+		if (deadline.length === 0) return undefined;
+		return new Date(deadline);
+	}
+
 	public collectSubjectLinks(html: string): string[] {
 		const $ = cheerio.load(html);
 		return $(SELECTOR.subjectCard)
@@ -148,9 +157,33 @@ export class Collector implements ICollector {
 				this.#logger.info(`collecting content for ${id}`);
 				const lmsContent = await this.#httpClient.fetchLmsContent(link);
 				const { subjectName, meetings } = this.#collectMeetings(lmsContent);
+				const meetingDetailsTask = meetings.map(async (meeting) => {
+					const lectureDetailsTask = meeting.lectures.map(async (lecture) => {
+						// only need to fetch the details of an assignment
+						// we can safely skip if it's not an assignment since they don't have a deadline
+						if (lecture.type !== LECTURE_TYPE.assignment) return lecture;
+						const assignmentContent =
+							await this.#httpClient.fetchAssignmentContent(lecture.url);
+						return {
+							...lecture,
+							deadline: this.#collectAssignmentDeadline(assignmentContent),
+						};
+					});
+					const lectureDetails = await Promise.all(lectureDetailsTask);
+					return {
+						...meeting,
+						lectures: lectureDetails,
+					};
+				});
+				const meetingsWithDetails = await Promise.all(meetingDetailsTask);
 				const lecturer = this.#extractLecturer(lmsContent);
 				this.#logger.info(`done with ${id}`);
-				return { title: subjectName, lecturer, courseId: id, meetings };
+				return {
+					title: subjectName,
+					lecturer,
+					courseId: id,
+					meetings: meetingsWithDetails,
+				};
 			}),
 		);
 		return subjects.filter(
