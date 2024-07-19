@@ -4,10 +4,8 @@
 	"description": "worker that polls for lms updates and sends them to telegram",
 	"main": "index.js",
 	"scripts": {
-		"dev:local": "wrangler dev --local ./src/index.ts",
-		"dev": "wrangler dev ./src/index.ts",
-		"dev:cron": "wrangler dev --test-scheduled ./src/index.ts",
-		"trigger": "curl 'http://localhost:8787/cdn-cgi/mf/scheduled'"
+		"build": "node build.js",
+		"dev": "tsx --watch -r dotenv/config ./src/index.ts"
 	},
 	"keywords": [],
 	"author": "elianiva",
@@ -16,14 +14,18 @@
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.3",
 		"@cloudflare/workers-types": "^4.20230511.0",
+		"dotenv": "^16.4.5",
 		"esbuild": "^0.17.19",
+		"tsx": "^4.16.2",
 		"typescript": "^5.0.4"
 	},
 	"dependencies": {
+		"@hono/node-server": "^1.12.0",
 		"cheerio": "1.0.0-rc.12",
 		"discord.js": "^14.11.0",
 		"hono": "^3.1.8",
 		"ofetch": "^1.0.1",
-		"rxjs": "^7.8.1"
+		"sqlite3": "^5.1.7",
+		"zod": "^3.23.8"
 	}
 }

@@ -2,7 +2,7 @@ import { ofetch } from "ofetch";
 import type { FetchOptions } from "ofetch/dist/node";
 import type { IWebhook } from "~/application/interfaces/IWebhook";
 import type { Subject } from "~/business/Subject";
-import type { Env } from "~/types/env";
+import type { Env } from "~/env";
 
 // currently only support sending to the discord notification API, soon it should support multiple webhook urls
 export class Webhook implements IWebhook {

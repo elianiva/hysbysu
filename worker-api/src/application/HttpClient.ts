@@ -1,7 +1,7 @@
-import { type FetchOptions, Headers, ofetch } from "ofetch";
-import type { Env } from "~/types/env";
+import { FetchContext, type FetchOptions, Headers, ofetch } from "ofetch";
 import type { ICookieJar } from "./interfaces/ICookieJar";
 import type { ILogger } from "./interfaces/ILogger";
+import type { Env } from "~/env";
 
 export class HttpClient {
 	#env: Env;
@@ -24,6 +24,9 @@ export class HttpClient {
 	}
 
 	private async collectSlcCookies() {
+		// this needs to be done twice because for some reason
+		// they decided to do this weird mechanism, i don't know why
+		await this.fetch(this.#env.SLC_URL, { method: "HEAD" });
 		await this.fetch(this.#env.SLC_URL, { method: "HEAD" });
 	}
 
@@ -49,10 +52,16 @@ export class HttpClient {
 		});
 	}
 
-	private async fetch(url: RequestInfo, options: FetchOptions = {}) {
+	private async fetch(
+		url: RequestInfo,
+		options: FetchOptions & {
+			excludedCookies?: string[];
+		} = {},
+	) {
 		// serialise the cookie
 		const cookieString = this.#cookieJar
 			.entries()
+			.filter((cookie) => !options.excludedCookies?.includes(cookie.key))
 			.map((cookie) => `${cookie.key}=${cookie.value}`)
 			.join("; ");
 
@@ -67,6 +76,12 @@ export class HttpClient {
 				headers.set(key, value);
 			}
 		}
+
+		// use chrome user agent by default
+		headers.set(
+			"User-Agent",
+			"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+		);
 
 		return ofetch(url, {
 			...options,
@@ -118,8 +133,17 @@ export class HttpClient {
 	}
 
 	public async fetchSubjectsContent() {
-		const response: string = await this.fetch(`${this.#env.SLC_URL}/spada`, {
+		const headers = new Headers();
+		headers.set("Sec-Gpc", "1");
+		headers.set("Sec-Fetch-Mode", "cors");
+		headers.set("Sec-Fetch-Site", "same-origin");
+		headers.set("Sec-Fetch-Dest", "empty");
+		headers.set("Referer", `${this.#env.SLC_URL}/spada`);
+		headers.set("Host", this.#env.SLC_URL);
+		headers.set("Pragma", "no-cache");
+		const response: string = await this.fetch(`${this.#env.SLC_URL}`, {
 			parseResponse: (text) => text,
+			headers,
 		});
 		return response;
 	}

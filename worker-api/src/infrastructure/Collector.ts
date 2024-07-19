@@ -1,9 +1,6 @@
 import * as cheerio from "cheerio";
 import type { HttpClient } from "~/application/HttpClient";
-import type {
-	CollectSubjectOptions,
-	ICollector,
-} from "~/application/interfaces/ICollector";
+import type { ICollector } from "~/application/interfaces/ICollector";
 import type { ILogger } from "~/application/interfaces/ILogger";
 import {
 	LECTURE_TYPE,
@@ -141,13 +138,8 @@ export class Collector implements ICollector {
 			.filter((url) => url !== undefined);
 	}
 
-	public async collectSubjects(
-		rawSubjects: string,
-		options: CollectSubjectOptions,
-	): Promise<Subject[]> {
-		const links = this.collectSubjectLinks(rawSubjects)
-			.sort()
-			.slice(options.slice.start, options.slice.end);
+	public async collectSubjects(rawSubjects: string): Promise<Subject[]> {
+		const links = this.collectSubjectLinks(rawSubjects).sort();
 		const subjects = await Promise.all(
 			links.map(async (link) => {
 				const url = new URL(link);

@@ -3,16 +3,11 @@ import type { IWebhook } from "~/application/interfaces/IWebhook";
 import { type Lecture, compareLecture } from "~/business/Lecture";
 import { type Meeting, compareMeeting } from "~/business/Meeting";
 import type { Subject } from "~/business/Subject";
-import type { Env } from "~/types/env";
 import type { HttpClient } from "./HttpClient";
 import type { ICollector } from "./interfaces/ICollector";
-
-type HandlerOption = {
-	slice: {
-		start: number;
-		end: number;
-	};
-};
+import type { Env } from "~/env";
+import type { IStorage } from "~/application/interfaces/IStorage";
+import { wrapPromiseResult } from "~/utils/promise";
 
 export class Worker {
 	#httpClient: HttpClient;
@@ -20,6 +15,7 @@ export class Worker {
 	#env: Env;
 	#webhook: IWebhook;
 	#logger: ILogger;
+	#storage: IStorage;
 
 	constructor(
 		httpClient: HttpClient,
@@ -27,12 +23,14 @@ export class Worker {
 		collector: ICollector,
 		webhook: IWebhook,
 		logger: ILogger,
+		storage: IStorage,
 	) {
 		this.#httpClient = httpClient;
 		this.#env = env;
 		this.#collector = collector;
 		this.#webhook = webhook;
 		this.#logger = logger;
+		this.#storage = storage;
 	}
 
 	#getMeetingsDiff(oldSubject: Subject, newSubject: Subject): Meeting[] {
@@ -81,46 +79,49 @@ export class Worker {
 		return result;
 	}
 
-	public async handle(options: HandlerOption) {
+	public async handle() {
 		await this.#httpClient.collectCookies();
-		this.#logger.info("Fetching cache...");
+		this.#logger.info("fetching lms content...");
 		const subjectsContent = await this.#httpClient.fetchSubjectsContent();
-		const subjects = await this.#collector.collectSubjects(subjectsContent, {
-			slice: options.slice,
-		});
+		const subjects = await this.#collector.collectSubjects(subjectsContent);
 		const diffingTasks = subjects.map(async (subject) => {
-			let oldSubjectString: string | null = null;
-			try {
-				oldSubjectString = await this.#env.HYSBYSU_STORAGE.get(
-					`subject_${subject.courseId}`,
+			this.#logger.info(`Handling course: ${subject.courseId}`);
+
+			const [oldSubjectString, subjectError] = await wrapPromiseResult(
+				this.#storage.get(`subject_${subject.courseId}`),
+			);
+			if (subjectError !== null) {
+				this.#logger.error(subjectError.message);
+				await this.#webhook.error(
+					`Failed to get old data for: ${subject.courseId}. Reason: ${subjectError.message}`,
 				);
-			} catch (err: unknown) {
-				if (err instanceof Error) {
-					this.#logger.error(err.message);
-					await this.#webhook.error(
-						`Failed to get old data for: ${subject.courseId}. Reason: ${err.message}`,
-					);
-				}
+				return;
 			}
-			if (oldSubjectString === null) return;
 
-			const oldSubject = JSON.parse(oldSubjectString) as Subject;
-			if (
-				subject.meetings.length > 0 &&
-				oldSubject !== null &&
-				oldSubject.meetings.length > 0
-			) {
-				const meetingsDiff = this.#getMeetingsDiff(oldSubject, subject);
-				if (meetingsDiff.length > 0) {
-					await this.#webhook.notify({
-						...subject,
-						meetings: meetingsDiff,
-					});
+			if (oldSubjectString !== null) {
+				this.#logger.info(`Comparing subjects for: ${subject.courseId}`);
+				const oldSubject = JSON.parse(oldSubjectString) as Subject;
+				if (
+					subject.meetings.length > 0 &&
+					oldSubject !== null &&
+					oldSubject.meetings.length > 0
+				) {
+					const meetingsDiff = this.#getMeetingsDiff(oldSubject, subject);
+					if (meetingsDiff.length > 0) {
+						await this.#webhook.notify({
+							...subject,
+							meetings: meetingsDiff,
+						});
+					}
 				}
 			}
 
 			try {
-				await this.#env.HYSBYSU_STORAGE.put(`subject_${subject.courseId}`, JSON.stringify(subject));
+				this.#logger.info(`Saving new data for: ${subject.courseId}`);
+				await this.#storage.set(
+					`subject_${subject.courseId}`,
+					JSON.stringify(subject),
+				);
 			} catch (err: unknown) {
 				if (err instanceof Error) {
 					this.#logger.error(err.message);
@@ -132,7 +133,9 @@ export class Worker {
 		});
 
 		try {
+			this.#logger.info("Handling subjects...");
 			await Promise.all(diffingTasks);
+			this.#logger.info("Subjects handled");
 		} catch (err: unknown) {
 			if (err instanceof Error) {
 				this.#logger.error(err.message);
